@@ -1,0 +1,4 @@
+/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/MainTest.java
+/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/fuzzing/DistanceVisitorTest.java
+/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/branch/BranchCoverageVisitorTest.java
+/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/line/LineCoverageVisitorTest.java
