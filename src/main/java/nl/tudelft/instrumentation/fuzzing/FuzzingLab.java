@@ -8,11 +8,11 @@ import java.util.stream.Collectors;
  * You should write your own solution using this class.
  */
 public class FuzzingLab {
+        private static final float K = 5;
         static Random r = new Random();
         static List<String> currentTrace;
         static int traceLength = 10;
         static String currentTraceSymbol;
-
 
         /**
          * Write your solution that specifies what should happen when a new branch has been found.
@@ -20,81 +20,145 @@ public class FuzzingLab {
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
                 // do something useful
 //                System.out.println("The current trace is "+String.join("-", currentTrace));
-                int branchDistance = calculateBranchDistance(condition);
-                System.out.println(condition.toString());
-//
-//                }else {
-//                        System.out.println("The left side:  " + condition.left + "The right side was null:  "  +
-//                                "operand:  " + condition.operator + " the line number is " + line_nr + " cond type: " + condition.type);
-//                }
-
+                float branchDistance = calculateBranchDistance(condition);
+                System.out.println("The final branch distance of " + condition.toString() +" is " + branchDistance);
         }
-//        switch(condition.operator) {
-//                case "||":
-//                        // boolean type
-//
-//                        break;
-//                case "&&":
-//                        // int type
-//                        break;
-//                case "<":
-//                        // string type
-//                        break;
-//                case ">":
-//                        // unary type
-//                        break;
-//                case "<=":
-//                        // binary type
-//                        break;
-//                case ">=":
-//                        // binary type
-//                        break;
-//
-//                case "==":
-//                        // binary type
-//                        break;
-//
-//                default:
-//                        // code block
-//        }
 
-        private static int calculateBranchDistance(MyVar condition) {
+        /**
+         *Branch Distance calculation for type 1, 4 and 5 MyVar types. Combination and operation logic implemented here in the switch statement
+         */
+        private static float calculateBranchDistance(MyVar condition) {
+                float branch_distance;
 
-                if(condition.type != 5){
-                        System.err.println("lol u fucked");
-                }else{
+                if(condition.type == 1){
+                        branch_distance = condition.value ? 0 : 1;
+                        return branch_distance;
+                }
+
+                if(condition.type == 5 || condition.type == 4){
                         MyVar left_side = condition.left;
-                        MyVar right_side = condition.right;
-                        int left_distance = -1;
-                        int right_distance = -1;
+                        MyVar right_side;
+
+                        float left_distance = -1;
+                        float right_distance = -1;
+
                         ArrayList<Integer> string_value_left = new ArrayList<>();
                         ArrayList<Integer> string_value_right = new ArrayList<>();
 
                         left_distance = distanceHelper(left_side, left_distance, string_value_left);
-                        right_distance = distanceHelper(right_side, right_distance, string_value_right);
-                        System.out.println("left distance is : " + left_distance + " right distance is : " +right_distance);
-                        if(!string_value_left.isEmpty() || !string_value_right.isEmpty()) {
-                                String listString_left = string_value_left.stream().map(Object::toString)
-                                        .collect(Collectors.joining(", "));
-                                String listString_right = string_value_right.stream().map(Object::toString)
-                                        .collect(Collectors.joining(", "));
-                                System.out.println("left string is : " + listString_left + " right sting is : " +listString_right);
+
+                        if(condition.type == 5) {
+                                right_side = condition.right;
+                                right_distance = distanceHelper(right_side, right_distance, string_value_right);
+                        }
+//                        System.out.println("left distance is : " + left_distance + " right distance is : " +right_distance);
+//                        if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
+//                                String listString_left = string_value_left.stream().map(Object::toString)
+//                                        .collect(Collectors.joining(", "));
+//                                String listString_right = string_value_right.stream().map(Object::toString)
+//                                        .collect(Collectors.joining(", "));
+//                                System.out.println("left string is : " + listString_left + " right sting is : " +listString_right);
+//                        }
+                        switch(condition.operator) {
+                                case "||":
+                                        branch_distance = Math.min(normalize(left_distance), normalize(right_distance));
+                                        break;
+                                case "&&":
+                                        branch_distance = normalize(left_distance) + normalize(right_distance);
+                                        break;
+                                case "!":
+                                        branch_distance = 1- normalize(left_distance);
+                                        break;
+                                case "<":
+                                        branch_distance = ((left_distance < right_distance) ? 0 : (left_distance-right_distance + K));
+                                        break;
+                                case ">":
+                                        branch_distance = ((left_distance > right_distance) ? 0 : (right_distance-left_distance + K));
+                                        break;
+                                case "<=":
+                                        branch_distance = ((left_distance <= right_distance) ? 0 : (left_distance-right_distance));
+                                        break;
+                                case ">=":
+                                        branch_distance = ((left_distance >= right_distance) ? 0 : (right_distance-left_distance));
+                                        break;
+
+                                case "==":
+                                        if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
+                                                branch_distance = (calculateStringDistance(string_value_left, string_value_right));
+                                        }else{
+                                                branch_distance = (Math.abs(left_distance-right_distance));
+                                        }
+                                        break;
+
+                                case "!=":
+                                        if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
+                                                branch_distance = (!string_value_left.equals(string_value_right) ? 0 : 1);
+                                        }else{
+                                                branch_distance = (left_distance!=right_distance ? 0 : 1);
+                                        }
+                                        break;
+
+                                default:
+                                        System.err.println("You missed operator "+ condition.operator );
+                                        branch_distance= -1;
+                        }
+
+                }else{
+                        System.err.println("Recursion problem");
+                        branch_distance = -1;
+
+                }
+//                System.out.println("Subbranch distance of " + condition.toString() + " is found to be " + branch_distance);
+
+                return branch_distance;
+        }
+
+        private static float normalize(float i){
+                return i/(i+1);
+        }
+
+        /**
+         *String comparator as given in the lecture slides, modified to work with out string list representations
+         */
+        private static int calculateStringDistance(ArrayList<Integer> left, ArrayList<Integer> right ){
+                int m = left.size();
+                int n = right.size();
+                int[][] table = new int[m+ 1][n + 1];
+                for (int i = 0; i <= m; i++) {
+                        for (int j = 0; j <= n; j++) {
+                                if (i == 0) {
+                                        table[i][j] = j;
+                                }
+                                else if (j == 0) {
+                                        table[i][j] = i;
+                                }
+                                else if (left.get(i-1) == right.get(j-1)){
+                                        table[i][j] = table[i-1][j-1];
+
+                                }else{
+                                        table[i][j] = Math.abs(left.get(i-1) - right.get(j-1))+
+                                                Math.min(Math.min(table[i][j-1], table[i-1][j]), table[i-1][j-1]);
+                                }
                         }
                 }
 
+                return table[m][n];
 
-                return 0;
+
         }
-
-        private static int distanceHelper(MyVar side, int distance, ArrayList<Integer> string_value) {
+        /**
+         *Recursion helper to extract the base case values such as strings, integers and booleans.
+         * For type 4 and 5, since they still have MyVar bases inside, calls the calculateBranchDistance function
+         */
+        private static float distanceHelper(MyVar side, float distance, ArrayList<Integer> string_value ){
                 switch (side.type){
                         case 1:
                                 //do sth, binary type
-                                distance = side.value ? 0 : 1;
+                                distance = (side.value ? 0 : 1);
                                 break;
                         case 2:
                                 //do sth, int type
-                                distance = side.int_value;
+                                distance = (float) side.int_value;
                                 break;
                         case 3:
                                 //do sth, string type
@@ -107,7 +171,7 @@ public class FuzzingLab {
                         case 4:
                                 //do sth, unary type
                                 if(side.operator.equals("!")){
-                                        distance = side.left.value ? 1 : 0;
+                                        distance = calculateBranchDistance(side);
                                 }else{
                                         distance = Integer.parseInt(side.operator + side.left.int_value);
                                 }
