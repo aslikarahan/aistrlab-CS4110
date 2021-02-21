@@ -14,14 +14,43 @@ public class FuzzingLab {
         static int traceLength = 10;
         static String currentTraceSymbol;
 
+        static HashSet<Integer> visitedBranches = new HashSet<Integer>();
+        static HashMap<String, HashSet<Integer>> branchesPerSymbol =new  HashMap<String, HashSet<Integer>>();
+        static HashMap<String, Float> branchDistancePerTrace =new  HashMap<String, Float>();
+
+        static List<String> generalTrace;
+        static float distanceSumOfTrace = 0;
+
         /**
          * Write your solution that specifies what should happen when a new branch has been found.
          */
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
                 // do something useful
-//                System.out.println("The current trace is "+String.join("-", currentTrace));
+                //System.out.println("Current Trace Symbol: " + currentTraceSymbol);
+                /**
+                   add branches which the symbol covered to their set +
+                   add line number to set of visited branches
+                 */
+                if(branchesPerSymbol.containsKey(currentTraceSymbol)){
+                        branchesPerSymbol.get(currentTraceSymbol).add(line_nr);
+                }else{
+                        HashSet<Integer> set = new HashSet<>();
+                        set.add(line_nr);
+                        branchesPerSymbol.put(currentTraceSymbol,set);
+                }
+                visitedBranches.add(line_nr);
+                //System.out.println("General Trace = " + generalTrace);
+                //System.out.println("Branches per Symbol: " + branchesPerSymbol);
+                //System.out.println("Size of visited Branches: " + visitedBranches.size());
+
+                /**
+                        summing up the distances for the trace (will be put to zero when it's empty)
+                 */
                 float branchDistance = calculateBranchDistance(condition);
-                System.out.println("The final branch distance of " + condition.toString() +" is " + branchDistance);
+                distanceSumOfTrace += branchDistance;
+                //System.out.println(currentTrace);
+                //System.out.println(currentTraceSymbol);
+                //System.out.println("The final branch distance of " + condition.toString() +" is " + branchDistance);
         }
 
         /**
@@ -189,7 +218,6 @@ public class FuzzingLab {
          * @return a fuzzed input
          */
         static String fuzz(String[] inputSymbols){
-
                 String nextInput = null;
                 // If the current trace does not exist,
                 // then generate a random one.
@@ -197,24 +225,75 @@ public class FuzzingLab {
                         System.out.println("current trace does not exist, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
                         nextInput = currentTrace.remove(0);
+
+                        generalTrace = new ArrayList<>(currentTrace);
                 }
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
+                        String generalTraceString = String.join("-", generalTrace);
+                        branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
+                        String symbolMaxBranchCov = getSymbolHighestBranchCoverage();
+                        String traceLowestDistance = getTraceLowestDistance();
+                        System.out.println("Size of visited Branches: " + visitedBranches.size());
+                        System.out.println("Symbol "+ symbolMaxBranchCov + " has max coverage of " + branchesPerSymbol.get(symbolMaxBranchCov).size());
+                        System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance));
+
+
+                        /**
+                         * new round - new trace and distance = 0
+                         * We also check that we have a unique trace - if not while loop
+                         */
+                        distanceSumOfTrace = 0;
+
                         System.out.println("current trace is empty, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
+                        while(branchDistancePerTrace.containsKey(String.join("-", currentTrace))){
+                                currentTrace = generateRandomTrace(inputSymbols);
+                        }
                         nextInput = currentTrace.remove(0);
+
+                        generalTrace = new ArrayList<>(currentTrace);
                 }
                 // If we are not done running on the current trace,
                 // grab the next input from the current trace.
                 else {
                         nextInput = currentTrace.remove(0);
-                        System.out.println("current trace is still going on, grabbing the next input from the current trace: "+ nextInput);
+                        //System.out.println("current trace is still going on, grabbing the next input from the current trace: "+ nextInput);
                         currentTraceSymbol = nextInput;
                 }
 
                 return nextInput;
         }
+
+        /**
+         * Comparison of the symbols in the hashmap with the biggest set
+         * @return symbol with biggest set
+         */
+        static String getSymbolHighestBranchCoverage(){
+                Map.Entry<String, HashSet<Integer>> max = null;
+                for (Map.Entry<String, HashSet<Integer>> entry : branchesPerSymbol.entrySet()) {
+                        if (max == null || max.getValue().size() < entry.getValue().size()) {
+                                max = entry;
+                        }
+                }
+                return max.getKey();
+        }
+
+        /**
+         * Comparison of the traces in the hashmap with the smallest distance
+         * @return trace with smallest distance
+         */
+        static String getTraceLowestDistance(){
+                Map.Entry<String, Float> min = null;
+                for (Map.Entry<String, Float> entry : branchDistancePerTrace.entrySet()) {
+                        if (min == null || min.getValue() > entry.getValue()) {
+                                min = entry;
+                        }
+                }
+                return min.getKey();
+        }
+
 
         /**
          * Generate a random trace from an array of symbols.
@@ -236,6 +315,6 @@ public class FuzzingLab {
          * @param out the string that has been outputted in the standard out.
          */
         static void output(String out){
-                System.out.println(out);
+                //System.out.println(out);
         }
 }
