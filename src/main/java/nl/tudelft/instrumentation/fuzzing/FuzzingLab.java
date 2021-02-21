@@ -224,9 +224,8 @@ public class FuzzingLab {
                 if (currentTrace == null) {
                         System.out.println("current trace does not exist, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
-                        nextInput = currentTrace.remove(0);
-
                         generalTrace = new ArrayList<>(currentTrace);
+                        nextInput = currentTrace.remove(0);
                 }
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
@@ -238,7 +237,7 @@ public class FuzzingLab {
                         System.out.println("Size of visited Branches: " + visitedBranches.size());
                         System.out.println("Symbol "+ symbolMaxBranchCov + " has max coverage of " + branchesPerSymbol.get(symbolMaxBranchCov).size());
                         System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance));
-
+                        System.out.println("Visited Branch: " + visitedBranches);
 
                         /**
                          * new round - new trace and distance = 0
@@ -251,9 +250,8 @@ public class FuzzingLab {
                         while(branchDistancePerTrace.containsKey(String.join("-", currentTrace))){
                                 currentTrace = generateRandomTrace(inputSymbols);
                         }
-                        nextInput = currentTrace.remove(0);
-
                         generalTrace = new ArrayList<>(currentTrace);
+                        nextInput = currentTrace.remove(0);
                 }
                 // If we are not done running on the current trace,
                 // grab the next input from the current trace.
