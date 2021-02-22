@@ -61,7 +61,7 @@ public class FuzzingLab {
 
                 if(condition.type == 1){
                         branch_distance = condition.value ? 0 : 1;
-                        return branch_distance;
+                        return normalize(branch_distance);
                 }
 
                 if(condition.type == 5 || condition.type == 4){
@@ -90,40 +90,43 @@ public class FuzzingLab {
 //                        }
                         switch(condition.operator) {
                                 case "||":
-                                        branch_distance = Math.min(normalize(left_distance), normalize(right_distance));
+                                        branch_distance = Math.min((left_distance), (right_distance));
+                                        branch_distance = normalize(branch_distance);
                                         break;
                                 case "&&":
-                                        branch_distance = normalize(left_distance) + normalize(right_distance);
+                                        branch_distance = (left_distance) + (right_distance);
+                                        branch_distance = normalize(branch_distance);
                                         break;
                                 case "!":
-                                        branch_distance = 1- normalize(left_distance);
+                                        branch_distance = 1- (left_distance);
+                                        branch_distance = normalize(branch_distance);
                                         break;
                                 case "<":
-                                        branch_distance = ((left_distance < right_distance) ? 0 : (left_distance-right_distance + K));
+                                        branch_distance = ((left_distance < right_distance) ? 0 : normalize(left_distance-right_distance + K));
                                         break;
                                 case ">":
-                                        branch_distance = ((left_distance > right_distance) ? 0 : (right_distance-left_distance + K));
+                                        branch_distance = ((left_distance > right_distance) ? 0 : normalize(right_distance-left_distance + K));
                                         break;
                                 case "<=":
-                                        branch_distance = ((left_distance <= right_distance) ? 0 : (left_distance-right_distance));
+                                        branch_distance = ((left_distance <= right_distance) ? 0 : normalize(left_distance-right_distance));
                                         break;
                                 case ">=":
-                                        branch_distance = ((left_distance >= right_distance) ? 0 : (right_distance-left_distance));
+                                        branch_distance = ((left_distance >= right_distance) ? 0 : normalize(right_distance-left_distance));
                                         break;
 
                                 case "==":
                                         if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
-                                                branch_distance = (calculateStringDistance(string_value_left, string_value_right));
+                                                branch_distance = normalize(calculateStringDistance(string_value_left, string_value_right));
                                         }else{
-                                                branch_distance = (Math.abs(left_distance-right_distance));
+                                                branch_distance = normalize(Math.abs(left_distance-right_distance));
                                         }
                                         break;
 
                                 case "!=":
                                         if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
-                                                branch_distance = (!string_value_left.equals(string_value_right) ? 0 : 1);
+                                                branch_distance = normalize(!string_value_left.equals(string_value_right) ? 0 : 1);
                                         }else{
-                                                branch_distance = (left_distance!=right_distance ? 0 : 1);
+                                                branch_distance = normalize(left_distance!=right_distance ? 0 : 1);
                                         }
                                         break;
 
@@ -183,7 +186,7 @@ public class FuzzingLab {
                 switch (side.type){
                         case 1:
                                 //do sth, binary type
-                                distance = (side.value ? 0 : 1);
+                                distance = normalize(side.value ? 0 : 1);
                                 break;
                         case 2:
                                 //do sth, int type
