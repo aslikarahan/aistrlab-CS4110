@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
  * You should write your own solution using this class.
  */
 public class FuzzingLab {
-        private static final float K = 5;
+        private static final float K = 0;
         static Random r = new Random();
         static List<String> currentTrace;
         static int traceLength = 10;
@@ -27,8 +27,8 @@ public class FuzzingLab {
          * Write your solution that specifies what should happen when a new branch has been found.
          */
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
-                System.out.println(currentTraceSymbol);
-                if(currentTraceSymbol != "R" && currentTraceSymbol != null) {
+                //System.out.println(currentTraceSymbol);
+                if(currentTraceSymbol != "R") {
 
                         // do something useful
                         //System.out.println("Current Trace Symbol: " + currentTraceSymbol);
@@ -243,11 +243,11 @@ public class FuzzingLab {
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
                         branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
-                        String traceMaxBranchCov = getSymbolHighestBranchCoverage();
-                        String traceLowestDistance = getTraceLowestDistance();
+                        List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
+                        List<String> traceLowestDistance = getTraceLowestDistance();
                         System.out.println("Size of visited Branches: " + visitedBranches.size());
-                        System.out.println("Trace "+ traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov).size());
-                        System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance));
+                        System.out.println("Trace "+ traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
+                        System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance.get(0)));
 
 
                         /**
@@ -258,9 +258,11 @@ public class FuzzingLab {
 
                         System.out.println("current trace is empty, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
+
                         while(branchDistancePerTrace.containsKey(String.join("-", currentTrace))){
                                 currentTrace = generateRandomTrace(inputSymbols);
                         }
+
                         generalTrace = new ArrayList<>(currentTrace);
                         generalTraceString = String.join("-", generalTrace);
                         nextInput = currentTrace.remove(0);
@@ -280,28 +282,47 @@ public class FuzzingLab {
          * Comparison of the symbols in the hashmap with the biggest set
          * @return symbol with biggest set
          */
-        static String getSymbolHighestBranchCoverage(){
+        static List<String> getTraceHighestBranchCoverage() {
                 Map.Entry<String, HashSet<Integer>> max = null;
                 for (Map.Entry<String, HashSet<Integer>> entry : branchesPerTrace.entrySet()) {
                         if (max == null || max.getValue().size() < entry.getValue().size()) {
                                 max = entry;
                         }
                 }
-                return max.getKey();
-        }
+                List<String> max_traces = new ArrayList<>();
 
+                int max_value = max.getValue().size();
+
+                for (Map.Entry<String, HashSet<Integer>> entry : branchesPerTrace.entrySet()) {
+                        if (entry.getValue().size() == max_value) {
+                                max_traces.add(entry.getKey());
+                        }
+                }
+
+
+                return max_traces;
+        }
         /**
          * Comparison of the traces in the hashmap with the smallest distance
          * @return trace with smallest distance
          */
-        static String getTraceLowestDistance(){
+        static List<String> getTraceLowestDistance(){
                 Map.Entry<String, Float> min = null;
                 for (Map.Entry<String, Float> entry : branchDistancePerTrace.entrySet()) {
                         if (min == null || min.getValue() > entry.getValue()) {
                                 min = entry;
                         }
                 }
-                return min.getKey();
+                List<String> min_traces = new ArrayList<>();
+
+                float min_value = min.getValue();
+                for (Map.Entry<String, Float> entry : branchDistancePerTrace.entrySet()) {
+                        if (entry.getValue() == min_value) {
+                                min_traces.add(entry.getKey());
+                        }
+                }
+
+                return min_traces;
         }
 
 
