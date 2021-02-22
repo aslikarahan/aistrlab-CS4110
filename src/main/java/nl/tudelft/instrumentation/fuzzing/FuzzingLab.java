@@ -31,26 +31,26 @@ public class FuzzingLab {
                    add branches which the symbol covered to their set +
                    add line number to set of visited branches
                  */
-                if(branchesPerSymbol.containsKey(currentTraceSymbol)){
-                        branchesPerSymbol.get(currentTraceSymbol).add(line_nr);
-                }else{
-                        HashSet<Integer> set = new HashSet<>();
-                        set.add(line_nr);
-                        branchesPerSymbol.put(currentTraceSymbol,set);
+                if(value) {
+                        if (branchesPerSymbol.containsKey(currentTraceSymbol)) {
+                                branchesPerSymbol.get(currentTraceSymbol).add(line_nr);
+                        } else {
+                                HashSet<Integer> set = new HashSet<>();
+                                set.add(line_nr);
+                                branchesPerSymbol.put(currentTraceSymbol, set);
+                        }
+                        visitedBranches.add(line_nr);
                 }
-                visitedBranches.add(line_nr);
-                //System.out.println("General Trace = " + generalTrace);
-                //System.out.println("Branches per Symbol: " + branchesPerSymbol);
-                //System.out.println("Size of visited Branches: " + visitedBranches.size());
+                //System.out.println("Condition: " + condition.toString());
+                //System.out.println("Value: " + value);
+                //System.out.println("Visited Branch size: " + visitedBranches.size());
+
 
                 /**
                         summing up the distances for the trace (will be put to zero when it's empty)
                  */
                 float branchDistance = calculateBranchDistance(condition);
                 distanceSumOfTrace += branchDistance;
-                //System.out.println(currentTrace);
-                //System.out.println(currentTraceSymbol);
-                //System.out.println("The final branch distance of " + condition.toString() +" is " + branchDistance);
         }
 
         /**
@@ -237,7 +237,7 @@ public class FuzzingLab {
                         System.out.println("Size of visited Branches: " + visitedBranches.size());
                         System.out.println("Symbol "+ symbolMaxBranchCov + " has max coverage of " + branchesPerSymbol.get(symbolMaxBranchCov).size());
                         System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance));
-                        System.out.println("Visited Branch: " + visitedBranches);
+
 
                         /**
                          * new round - new trace and distance = 0
