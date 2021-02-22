@@ -27,7 +27,8 @@ public class FuzzingLab {
          * Write your solution that specifies what should happen when a new branch has been found.
          */
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
-                if(currentTraceSymbol != "R") {
+                print(currentTraceSymbol)
+                if(currentTraceSymbol != "R" && currentTraceSymbol != null) {
 
                         // do something useful
                         //System.out.println("Current Trace Symbol: " + currentTraceSymbol);
