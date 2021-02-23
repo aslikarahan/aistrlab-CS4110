@@ -22,9 +22,7 @@ public class FuzzingLab {
         static ArrayList<List<String>> permutationList = new ArrayList<>();
         static ArrayList<String> permutationListStrings;
 
-        static {
-                permutationListStrings = new ArrayList<String>();
-        }
+        static {permutationListStrings = new ArrayList<String>();}
 
         static int permutationCounter = 0;
         static List<String> mainMotherTrace;
@@ -33,7 +31,7 @@ public class FuzzingLab {
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000*10; //stop after 10 minutes
+        static long end = start + 60*1000*1; //stop after 10 minutes
 
 
         /**
@@ -41,7 +39,7 @@ public class FuzzingLab {
          */
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
                 //System.out.println(currentTraceSymbol);
-                if(!currentTraceSymbol.equals("R")) {
+                if(currentTraceSymbol != "R") {
 
                         // do something useful
                         //System.out.println("Current Trace Symbol: " + currentTraceSymbol);
@@ -62,7 +60,7 @@ public class FuzzingLab {
                         //System.out.println("input trace: " + currentTraceSymbol);
                         //System.out.println("Condition: " + condition.toString());
                         //System.out.println("Value: " + value);
-                        //System.out.println("Visited Branch size: " + visitedBranches.size());
+                        System.out.println("Visited Branch size: " + visitedBranches.size());
 
 
                         /**
@@ -251,8 +249,9 @@ public class FuzzingLab {
                         generalTrace = new ArrayList<>(currentTrace);
                         mainMotherTrace = new ArrayList<>(currentTrace);
                         generalTraceString = String.join("-", generalTrace);
+                        List<List<String>> tmp1 = permutationCreator(mainMotherTrace);
                         for(int i = 0; i<permutationNumber; i++){
-                                List<String> permutation = generateRandomTrace(inputSymbols);
+                                List<String> permutation = tmp1.get(i);
                                 permutationList.add(i, permutation);
                                 permutationListStrings.add(i, String.join("-", permutation));
                                 //TODO: this will be changed to permutations
@@ -302,11 +301,11 @@ public class FuzzingLab {
                                         mainMotherTrace = new ArrayList<>(currentTrace);
 
                                         generalTrace = new ArrayList<>(currentTrace);
+                                        List<List<String>> tmp1 = permutationCreator(mainMotherTrace);
                                         for(int i = 0; i<permutationNumber; i++){
-                                                List<String> permutation = generateRandomTrace(inputSymbols);
+                                                List<String> permutation = tmp1.get(i);
                                                 permutationList.add(i, permutation);
                                                 permutationListStrings.add(i, String.join("-", permutation));
-                                                //TODO: this will be changed to permutations
                                         }
                                 }else{
                                         currentTrace = generateRandomTrace(inputSymbols);
@@ -317,16 +316,20 @@ public class FuzzingLab {
                                         generalTrace = new ArrayList<>(currentTrace);
                                         mainMotherTrace = new ArrayList<>(currentTrace);
                                         generalTraceString = String.join("-", generalTrace);
+                                        List<List<String>> tmp1 = permutationCreator(mainMotherTrace);
                                         for(int i = 0; i<permutationNumber; i++){
-                                                List<String> permutation = generateRandomTrace(inputSymbols);
+                                                List<String> permutation = tmp1.get(i);
                                                 permutationList.add(i, permutation);
                                                 permutationListStrings.add(i, String.join("-", permutation));
-                                                //TODO: this will be changed to permutations
                                         }
 
                                 }
                                 nextInput = currentTrace.remove(0);
                                 permutationCounter = 0;
+
+                                if (System.currentTimeMillis() > end) {
+                                        System.exit(0);
+                                }
 
 //
 //                                currentTrace = generateRandomTrace(inputSymbols);
@@ -340,11 +343,6 @@ public class FuzzingLab {
 //                                nextInput = currentTrace.remove(0);
 
                         }else{
-
-
-                                if (System.currentTimeMillis() > end) {
-                                        System.exit(0);
-                                }
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 distanceSumOfTrace = 0;
                                 currentTrace = permutationList.get(permutationCounter);
@@ -366,6 +364,22 @@ public class FuzzingLab {
                 }
 
                 return nextInput;
+        }
+
+
+        static  List<List<String>> permutationCreator(List<String> inputTrace){
+                List<List<String>> permutations = new ArrayList<List<String>>();
+                List<String> permutationTrace = new ArrayList<>(inputTrace);
+                permutationTrace.remove(permutationTrace.size()-1);
+                while(permutations.size() != permutationNumber){
+                        List<String> tmp = new ArrayList<>(permutationTrace);
+                        Collections.shuffle(tmp);
+                        if(!tmp.equals(inputTrace) && !permutations.contains(tmp)){
+                                tmp.add("R");
+                                permutations.add(tmp);
+                        }
+                }
+                return permutations;
         }
 
         /**
