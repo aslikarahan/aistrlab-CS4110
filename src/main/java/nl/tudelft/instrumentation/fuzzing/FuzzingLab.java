@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
  * You should write your own solution using this class.
  */
 public class FuzzingLab {
-        private static final float K = 0;
+        private static final float K = 1;
         static Random r = new Random();
         static List<String> currentTrace;
         static int traceLength = 10;
@@ -21,6 +21,8 @@ public class FuzzingLab {
         static List<String> generalTrace;
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
+        static long start = System.currentTimeMillis();
+        static long end = start + 60*1000*10; //stop after 10 minutes
 
 
         /**
@@ -242,6 +244,7 @@ public class FuzzingLab {
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
+
                         branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                         List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
                         List<String> traceLowestDistance = getTraceLowestDistance();
@@ -249,11 +252,15 @@ public class FuzzingLab {
                         System.out.println("Trace "+ traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
                         System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance.get(0)));
 
+                        if(System.currentTimeMillis() > end){
+                                System.exit(0);
+                        }
 
                         /**
                          * new round - new trace and distance = 0
                          * We also check that we have a unique trace - if not while loop
                          */
+
                         distanceSumOfTrace = 0;
 
                         System.out.println("current trace is empty, Generating a random trace");
@@ -346,6 +353,6 @@ public class FuzzingLab {
          * @param out the string that has been outputted in the standard out.
          */
         static void output(String out){
-                //System.out.println(out);
+                System.out.println(out);
         }
 }
