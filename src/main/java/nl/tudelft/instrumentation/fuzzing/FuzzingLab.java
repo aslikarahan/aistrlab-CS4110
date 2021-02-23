@@ -33,6 +33,8 @@ public class FuzzingLab {
         static long start = System.currentTimeMillis();
         static long end = start + 60*1000*2; //stop after 10 minutes
 
+        static HashSet<String> allErrors = new HashSet<>();
+
 
         /**
          * Write your solution that specifies what should happen when a new branch has been found.
@@ -460,5 +462,11 @@ public class FuzzingLab {
          */
         static void output(String out){
 //                System.out.println(out);
+        }
+
+        static void printError(String error){
+                allErrors.add(error);
+                System.out.println(error);
+                System.out.println(allErrors);
         }
 }
