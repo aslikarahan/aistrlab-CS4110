@@ -60,7 +60,7 @@ public class FuzzingLab {
                         //System.out.println("input trace: " + currentTraceSymbol);
                         //System.out.println("Condition: " + condition.toString());
                         //System.out.println("Value: " + value);
-                        System.out.println("Visited Branch size: " + visitedBranches.size());
+                        //System.out.println("Visited Branch size: " + visitedBranches.size());
 
 
                         /**
@@ -267,11 +267,11 @@ public class FuzzingLab {
                 else if (currentTrace.isEmpty()) {
                         if(permutationCounter==permutationNumber){
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
-//                                List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
-//                                List<String> traceLowestDistance = getTraceLowestDistance(branchDistancePerTrace);
-//                                System.out.println("Size of visited Branches: " + visitedBranches.size());
-//                                System.out.println("Trace " + traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
-//                                System.out.println("Trace " + traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance.get(0)));
+                                List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
+                                List<String> traceLowestDistance = getTraceLowestDistance(branchDistancePerTrace);
+                                System.out.println("Size of visited Branches: " + visitedBranches.size());
+                                System.out.println("Trace " + traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
+                                System.out.println("Trace " + traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance.get(0)));
                                 /**
                                  * new round - new trace and distance = 0
                                  * We also check that we have a unique trace - if not while loop
