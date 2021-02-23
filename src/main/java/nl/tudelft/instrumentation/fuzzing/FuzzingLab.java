@@ -18,6 +18,7 @@ public class FuzzingLab {
         static HashSet<Integer> visitedBranches = new HashSet<>();
         static HashMap<String, HashSet<Integer>> branchesPerTrace = new HashMap<>();
         static HashMap<String, Float> branchDistancePerTrace = new HashMap<>();
+
         static ArrayList<List<String>> permutationList = new ArrayList<>();
         static ArrayList<String> permutationListStrings;
 
@@ -309,6 +310,9 @@ public class FuzzingLab {
                                         }
                                 }else{
                                         currentTrace = generateRandomTrace(inputSymbols);
+                                        while (branchDistancePerTrace.containsKey(String.join("-", currentTrace))) {
+                                                currentTrace = generateRandomTrace(inputSymbols);
+                                        }
                                         System.out.println("All the permutations are worse than the main trace, choosing a random trace to start everything:" + currentTrace);
                                         generalTrace = new ArrayList<>(currentTrace);
                                         mainMotherTrace = new ArrayList<>(currentTrace);
