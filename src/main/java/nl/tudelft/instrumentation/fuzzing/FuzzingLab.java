@@ -13,10 +13,20 @@ public class FuzzingLab {
         static List<String> currentTrace;
         static int traceLength = 10;
         static String currentTraceSymbol;
+        private static final int permutationNumber = 5;
 
-        static HashSet<Integer> visitedBranches = new HashSet<Integer>();
-        static HashMap<String, HashSet<Integer>> branchesPerTrace =new  HashMap<String, HashSet<Integer>>();
-        static HashMap<String, Float> branchDistancePerTrace =new  HashMap<String, Float>();
+        static HashSet<Integer> visitedBranches = new HashSet<>();
+        static HashMap<String, HashSet<Integer>> branchesPerTrace = new HashMap<>();
+        static HashMap<String, Float> branchDistancePerTrace = new HashMap<>();
+        static ArrayList<List<String>> permutationList = new ArrayList<>();
+        static ArrayList<String> permutationListStrings;
+
+        static {
+                permutationListStrings = new ArrayList<String>();
+        }
+
+        static int permutationCounter = 0;
+        static List<String> mainMotherTrace;
 
         static List<String> generalTrace;
         static String generalTraceString;
@@ -30,7 +40,7 @@ public class FuzzingLab {
          */
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
                 //System.out.println(currentTraceSymbol);
-                if(currentTraceSymbol != "R") {
+                if(!currentTraceSymbol.equals("R")) {
 
                         // do something useful
                         //System.out.println("Current Trace Symbol: " + currentTraceSymbol);
@@ -174,7 +184,7 @@ public class FuzzingLab {
                                 else if (j == 0) {
                                         table[i][j] = i;
                                 }
-                                else if (left.get(i-1) == right.get(j-1)){
+                                else if (left.get(i - 1).equals(right.get(j - 1))){
                                         table[i][j] = table[i-1][j-1];
 
                                 }else{
@@ -238,41 +248,110 @@ public class FuzzingLab {
                         System.out.println("current trace does not exist, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
                         generalTrace = new ArrayList<>(currentTrace);
+                        mainMotherTrace = new ArrayList<>(currentTrace);
                         generalTraceString = String.join("-", generalTrace);
+                        for(int i = 0; i<permutationNumber; i++){
+                                List<String> permutation = generateRandomTrace(inputSymbols);
+                                permutationList.add(i, permutation);
+                                permutationListStrings.add(i, String.join("-", permutation));
+                                //TODO: this will be changed to permutations
+                        }
+                        System.out.println("permutations are as follows : " + permutationList);
+
                         nextInput = currentTrace.remove(0);
+
+
                 }
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
+                        if(permutationCounter==permutationNumber){
+                                branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
+//                                List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
+//                                List<String> traceLowestDistance = getTraceLowestDistance(branchDistancePerTrace);
+//                                System.out.println("Size of visited Branches: " + visitedBranches.size());
+//                                System.out.println("Trace " + traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
+//                                System.out.println("Trace " + traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance.get(0)));
+                                /**
+                                 * new round - new trace and distance = 0
+                                 * We also check that we have a unique trace - if not while loop
+                                 */
+                                distanceSumOfTrace = 0;
+                                System.out.println("current trace is empty, and we are out of permutations to try");
 
-                        branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
-                        List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
-                        List<String> traceLowestDistance = getTraceLowestDistance();
-                        System.out.println("Size of visited Branches: " + visitedBranches.size());
-                        System.out.println("Trace "+ traceMaxBranchCov + " has max coverage of " + branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
-                        System.out.println("Trace "+ traceLowestDistance + " has min distance of " + branchDistancePerTrace.get(traceLowestDistance.get(0)));
+                                Float mainMotherTraceDistance = branchDistancePerTrace.get(String.join("-", mainMotherTrace));
+                                System.out.println("Mother trace  " + mainMotherTrace + " has distance of " + mainMotherTraceDistance);
 
-                        if(System.currentTimeMillis() > end){
-                                System.exit(0);
+                                HashMap<String, Float> branchDistancePerTraceForPermutations = new HashMap<>();
+                                for(int i = 0; i<permutationNumber; i++){
+                                        String permutationString = permutationListStrings.get(i);
+                                        branchDistancePerTraceForPermutations.put(permutationString, branchDistancePerTrace.get(permutationString));
+                                }
+                                System.out.println(branchDistancePerTraceForPermutations);
+                                List<String> permutationWithLowestDistance = getTraceLowestDistance(branchDistancePerTraceForPermutations);
+
+                                Float bestPermutationDistance = branchDistancePerTrace.get(permutationWithLowestDistance.get(0));
+
+                                System.out.println("Permutation " + permutationWithLowestDistance + " has min distance of " + bestPermutationDistance);
+
+                                if(bestPermutationDistance < mainMotherTraceDistance){
+                                        generalTraceString =  permutationWithLowestDistance.get(0);
+                                        System.out.println("we have found a better permutation to work from which is " + generalTraceString);
+                                        currentTrace = generateTraceFromString(generalTraceString.split("-"));
+                                        mainMotherTrace = new ArrayList<>(currentTrace);
+
+                                        generalTrace = new ArrayList<>(currentTrace);
+                                        for(int i = 0; i<permutationNumber; i++){
+                                                List<String> permutation = generateRandomTrace(inputSymbols);
+                                                permutationList.add(i, permutation);
+                                                permutationListStrings.add(i, String.join("-", permutation));
+                                                //TODO: this will be changed to permutations
+                                        }
+                                }else{
+                                        currentTrace = generateRandomTrace(inputSymbols);
+                                        System.out.println("All the permutations are worse than the main trace, choosing a random trace to start everything:" + currentTrace);
+                                        generalTrace = new ArrayList<>(currentTrace);
+                                        mainMotherTrace = new ArrayList<>(currentTrace);
+                                        generalTraceString = String.join("-", generalTrace);
+                                        for(int i = 0; i<permutationNumber; i++){
+                                                List<String> permutation = generateRandomTrace(inputSymbols);
+                                                permutationList.add(i, permutation);
+                                                permutationListStrings.add(i, String.join("-", permutation));
+                                                //TODO: this will be changed to permutations
+                                        }
+
+                                }
+                                nextInput = currentTrace.remove(0);
+                                permutationCounter = 0;
+
+//
+//                                currentTrace = generateRandomTrace(inputSymbols);
+//
+//                                while (branchDistancePerTrace.containsKey(String.join("-", currentTrace))) {
+//                                        currentTrace = generateRandomTrace(inputSymbols);
+//                                }
+//
+//                                generalTrace = new ArrayList<>(currentTrace);
+//                                generalTraceString = String.join("-", generalTrace);
+//                                nextInput = currentTrace.remove(0);
+
+                        }else{
+
+
+                                if (System.currentTimeMillis() > end) {
+                                        System.exit(0);
+                                }
+                                branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
+                                distanceSumOfTrace = 0;
+                                currentTrace = permutationList.get(permutationCounter);
+                                System.out.println("Still executing the permutations, now at: " + currentTrace );
+                                generalTrace = new ArrayList<>(currentTrace);
+                                generalTraceString = String.join("-", generalTrace);
+                                nextInput = currentTrace.remove(0);
+                                permutationCounter ++;
+
+
                         }
-
-                        /**
-                         * new round - new trace and distance = 0
-                         * We also check that we have a unique trace - if not while loop
-                         */
-
-                        distanceSumOfTrace = 0;
-
-                        System.out.println("current trace is empty, Generating a random trace");
-                        currentTrace = generateRandomTrace(inputSymbols);
-
-                        while(branchDistancePerTrace.containsKey(String.join("-", currentTrace))){
-                                currentTrace = generateRandomTrace(inputSymbols);
-                        }
-
-                        generalTrace = new ArrayList<>(currentTrace);
-                        generalTraceString = String.join("-", generalTrace);
-                        nextInput = currentTrace.remove(0);
                 }
                 // If we are not done running on the current trace,
                 // grab the next input from the current trace.
@@ -313,9 +392,9 @@ public class FuzzingLab {
          * Comparison of the traces in the hashmap with the smallest distance
          * @return trace with smallest distance
          */
-        static List<String> getTraceLowestDistance(){
+        static List<String> getTraceLowestDistance(HashMap<String, Float> branchDistanceMap){
                 Map.Entry<String, Float> min = null;
-                for (Map.Entry<String, Float> entry : branchDistancePerTrace.entrySet()) {
+                for (Map.Entry<String, Float> entry : branchDistanceMap.entrySet()) {
                         if (min == null || min.getValue() > entry.getValue()) {
                                 min = entry;
                         }
@@ -323,7 +402,7 @@ public class FuzzingLab {
                 List<String> min_traces = new ArrayList<>();
 
                 float min_value = min.getValue();
-                for (Map.Entry<String, Float> entry : branchDistancePerTrace.entrySet()) {
+                for (Map.Entry<String, Float> entry : branchDistanceMap.entrySet()) {
                         if (entry.getValue() == min_value) {
                                 min_traces.add(entry.getKey());
                         }
@@ -331,6 +410,7 @@ public class FuzzingLab {
 
                 return min_traces;
         }
+
 
 
         /**
@@ -347,12 +427,20 @@ public class FuzzingLab {
                 return trace;
         }
 
+        static List<String> generateTraceFromString(String[] symbols) {
+                ArrayList<String> trace = new ArrayList<>();
+                for (int i = 0; i < traceLength+1; i++) {
+                        trace.add(symbols[i]);
+                }
+                return trace;
+        }
+
         /**
          * Method that is used for catching the output from standard out.
          * You should write your own logic here.
          * @param out the string that has been outputted in the standard out.
          */
         static void output(String out){
-                System.out.println(out);
+//                System.out.println(out);
         }
 }
