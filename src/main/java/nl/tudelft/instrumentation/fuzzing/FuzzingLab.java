@@ -1,8 +1,10 @@
 package nl.tudelft.instrumentation.fuzzing;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 /**
  * You should write your own solution using this class.
@@ -31,9 +33,15 @@ public class FuzzingLab {
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000*2; //stop after 10 minutes
+        static long end = start + 60*1000; //stop after 10 minutes
 
         static HashSet<String> allErrors = new HashSet<>();
+//        static PrintWriter pw = null;
+        static StringBuilder sb = new StringBuilder();
+
+
+
+
 
 
         /**
@@ -246,6 +254,10 @@ public class FuzzingLab {
                 // If the current trace does not exist,
                 // then generate a random one.
                 if (currentTrace == null) {
+                        sb.append("time");
+                        sb.append(',');
+                        sb.append("performance");
+                        sb.append('\n');
                         System.out.println("current trace does not exist, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
                         generalTrace = new ArrayList<>(currentTrace);
@@ -256,7 +268,6 @@ public class FuzzingLab {
                                 List<String> permutation = tmp1.get(i);
                                 permutationList.add(i, permutation);
                                 permutationListStrings.add(i, String.join("-", permutation));
-                                //TODO: this will be changed to permutations
                         }
                         System.out.println("permutations are as follows : " + permutationList);
 
@@ -267,7 +278,7 @@ public class FuzzingLab {
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
-                        //TODO: Append in CSV #branches + time
+                        addLineToCSV();
                         if(permutationCounter==permutationNumber){
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
@@ -331,19 +342,17 @@ public class FuzzingLab {
                                 permutationCounter = 0;
 
                                 if (System.currentTimeMillis() > end) {
+                                        PrintWriter pw = null;
+                                        try {
+                                                pw = new PrintWriter(new File("performance.csv"));
+                                        } catch (FileNotFoundException ex) {
+                                                ex.printStackTrace();
+                                        }
+                                        pw.write(sb.toString());
+                                        pw.flush();
+                                        pw.close();
                                         System.exit(0);
                                 }
-
-//
-//                                currentTrace = generateRandomTrace(inputSymbols);
-//
-//                                while (branchDistancePerTrace.containsKey(String.join("-", currentTrace))) {
-//                                        currentTrace = generateRandomTrace(inputSymbols);
-//                                }
-//
-//                                generalTrace = new ArrayList<>(currentTrace);
-//                                generalTraceString = String.join("-", generalTrace);
-//                                nextInput = currentTrace.remove(0);
 
                         }else{
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
@@ -469,5 +478,13 @@ public class FuzzingLab {
                 allErrors.add(error);
                 System.out.println(error);
                 System.out.println(allErrors);
+        }
+
+        static void addLineToCSV(){
+                        sb.append(System.currentTimeMillis());
+                        sb.append(',');
+                        sb.append(visitedBranches.size());
+                        sb.append('\n');
+
         }
 }
