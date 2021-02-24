@@ -4,7 +4,7 @@ import nl.tudelft.instrumentation.fuzzing.FuzzingLab;
 import java.util.HashSet;
 
 public class Errors {
-    static HashSet<String> allErrors = new HashSet<>();
+    //static HashSet<String> allErrors = new HashSet<>();
 
     public static void __VERIFIER_error(int i) {
         //throw new IllegalStateException( "error_" + i );
@@ -15,6 +15,5 @@ public class Errors {
         System.out.println(allErrors);
         */
         FuzzingLab.printError("error_" + i);
-
     }
 }

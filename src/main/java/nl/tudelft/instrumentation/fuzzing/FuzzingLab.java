@@ -13,7 +13,7 @@ public class FuzzingLab {
         static List<String> currentTrace;
         static int traceLength = 10;
         static String currentTraceSymbol;
-        private static final int permutationNumber = 20;
+        private static final int permutationNumber = 10;
 
         static HashSet<Integer> visitedBranches = new HashSet<>();
         static HashMap<String, HashSet<Integer>> branchesPerTrace = new HashMap<>();
@@ -267,6 +267,7 @@ public class FuzzingLab {
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
+                        //TODO: Append in CSV #branches + time
                         if(permutationCounter==permutationNumber){
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
