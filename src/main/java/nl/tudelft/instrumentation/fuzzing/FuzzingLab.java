@@ -16,6 +16,7 @@ public class FuzzingLab {
         static int traceLength = 10;
         static String currentTraceSymbol;
         private static final int permutationNumber = 10;
+        private static final boolean errorProblemFlag = false;
 
         static HashSet<Integer> visitedBranches = new HashSet<>();
         static HashMap<String, HashSet<Integer>> branchesPerTrace = new HashMap<>();
@@ -33,10 +34,9 @@ public class FuzzingLab {
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000; //stop after 10 minutes
+        static long end = start + 60*1000*2; //stop after 10 minutes
 
         static HashSet<String> allErrors = new HashSet<>();
-//        static PrintWriter pw = null;
         static StringBuilder sb = new StringBuilder();
 
 
@@ -483,8 +483,12 @@ public class FuzzingLab {
         static void addLineToCSV(){
                         sb.append(System.currentTimeMillis());
                         sb.append(',');
+                if(errorProblemFlag) {
+                        sb.append(allErrors.size());
+                }else{
                         sb.append(visitedBranches.size());
-                        sb.append('\n');
+                }
+                sb.append('\n');
 
         }
 }
