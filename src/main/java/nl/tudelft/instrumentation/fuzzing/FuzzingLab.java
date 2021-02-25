@@ -3,6 +3,7 @@ package nl.tudelft.instrumentation.fuzzing;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Random;
 
@@ -16,7 +17,7 @@ public class FuzzingLab {
         static int traceLength = 10;
         static String currentTraceSymbol;
         private static final int permutationNumber = 10;
-        private static final boolean errorProblemFlag = false;
+        private static final boolean errorProblemFlag = true;
 
         static HashSet<Integer> visitedBranches = new HashSet<>();
         static HashMap<String, HashSet<Integer>> branchesPerTrace = new HashMap<>();
@@ -34,14 +35,11 @@ public class FuzzingLab {
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000*2; //stop after 10 minutes
+        static long end = start + 60*1000; //stop after 10 minutes
 
-        static HashSet<String> allErrors = new HashSet<>();
-        static StringBuilder sb = new StringBuilder();
-
-
-
-
+        static HashMap<String, HashSet<String>> allErrors =  new HashMap<>();
+        static StringBuilder sbGeneral = new StringBuilder();
+        static StringBuilder sbGraph = new StringBuilder();
 
 
         /**
@@ -254,11 +252,15 @@ public class FuzzingLab {
                 // If the current trace does not exist,
                 // then generate a random one.
                 if (currentTrace == null) {
-                        sb.append("time");
-                        sb.append(',');
-                        sb.append("performance");
-                        sb.append('\n');
-                        System.out.println("current trace does not exist, Generating a random trace");
+                        sbGraph.append("Time");
+                        sbGraph.append(',');
+                        sbGraph.append("AmountOfErrors");
+                        sbGraph.append('\n');
+                        sbGeneral.append("Label");
+                        sbGeneral.append(',');
+                        sbGeneral.append("value");
+                        sbGeneral.append('\n');
+                        //System.out.println("current trace does not exist, Generating a random trace");
                         currentTrace = generateRandomTrace(inputSymbols);
                         generalTrace = new ArrayList<>(currentTrace);
                         mainMotherTrace = new ArrayList<>(currentTrace);
@@ -269,7 +271,7 @@ public class FuzzingLab {
                                 permutationList.add(i, permutation);
                                 permutationListStrings.add(i, String.join("-", permutation));
                         }
-                        System.out.println("permutations are as follows : " + permutationList);
+                        //System.out.println("permutations are as follows : " + permutationList);
 
                         nextInput = currentTrace.remove(0);
 
@@ -278,7 +280,6 @@ public class FuzzingLab {
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
-                        addLineToCSV();
                         if(permutationCounter==permutationNumber){
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
@@ -294,23 +295,23 @@ public class FuzzingLab {
                                 System.out.println("current trace is empty, and we are out of permutations to try");
 
                                 Float mainMotherTraceDistance = branchDistancePerTrace.get(String.join("-", mainMotherTrace));
-                                System.out.println("Mother trace  " + mainMotherTrace + " has distance of " + mainMotherTraceDistance);
+                                //System.out.println("Mother trace  " + mainMotherTrace + " has distance of " + mainMotherTraceDistance);
 
                                 HashMap<String, Float> branchDistancePerTraceForPermutations = new HashMap<>();
                                 for(int i = 0; i<permutationNumber; i++){
                                         String permutationString = permutationListStrings.get(i);
                                         branchDistancePerTraceForPermutations.put(permutationString, branchDistancePerTrace.get(permutationString));
                                 }
-                                System.out.println(branchDistancePerTraceForPermutations);
+                                //System.out.println(branchDistancePerTraceForPermutations);
                                 List<String> permutationWithLowestDistance = getTraceLowestDistance(branchDistancePerTraceForPermutations);
 
                                 Float bestPermutationDistance = branchDistancePerTrace.get(permutationWithLowestDistance.get(0));
 
-                                System.out.println("Permutation " + permutationWithLowestDistance + " has min distance of " + bestPermutationDistance);
+                                //System.out.println("Permutation " + permutationWithLowestDistance + " has min distance of " + bestPermutationDistance);
 
                                 if(bestPermutationDistance < mainMotherTraceDistance){
                                         generalTraceString =  permutationWithLowestDistance.get(0);
-                                        System.out.println("we have found a better permutation to work from which is " + generalTraceString);
+                                        //System.out.println("we have found a better permutation to work from which is " + generalTraceString);
                                         currentTrace = generateTraceFromString(generalTraceString.split("-"));
                                         mainMotherTrace = new ArrayList<>(currentTrace);
 
@@ -342,15 +343,24 @@ public class FuzzingLab {
                                 permutationCounter = 0;
 
                                 if (System.currentTimeMillis() > end) {
-                                        PrintWriter pw = null;
+                                        addLineToGeneralCSV();
+                                        PrintWriter graph = null;
+                                        PrintWriter general = null;
+                                        LocalDateTime now = LocalDateTime.now();
+                                        String hour = String.valueOf(now.getHour());
+                                        String minute = String.valueOf(now.getMinute());
                                         try {
-                                                pw = new PrintWriter(new File("performance.csv"));
+                                                graph = new PrintWriter(new File("CSV/graph"+hour+minute+".csv"));
+                                                general = new PrintWriter(new File("CSV/general"+hour+minute+".csv"));
                                         } catch (FileNotFoundException ex) {
                                                 ex.printStackTrace();
                                         }
-                                        pw.write(sb.toString());
-                                        pw.flush();
-                                        pw.close();
+                                        graph.write(sbGraph.toString());
+                                        graph.flush();
+                                        graph.close();
+                                        general.write(sbGeneral.toString());
+                                        general.flush();
+                                        general.close();
                                         System.exit(0);
                                 }
 
@@ -358,7 +368,7 @@ public class FuzzingLab {
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 distanceSumOfTrace = 0;
                                 currentTrace = permutationList.get(permutationCounter);
-                                System.out.println("Still executing the permutations, now at: " + currentTrace );
+                                //System.out.println("Still executing the permutations, now at: " + currentTrace );
                                 generalTrace = new ArrayList<>(currentTrace);
                                 generalTraceString = String.join("-", generalTrace);
                                 nextInput = currentTrace.remove(0);
@@ -472,23 +482,79 @@ public class FuzzingLab {
          */
         static void output(String out){
 //                System.out.println(out);
+//                System.out.println(out);
         }
 
         static void printError(String error){
-                allErrors.add(error);
-                System.out.println(error);
-                System.out.println(allErrors);
+                if(allErrors.containsKey(error)){
+                        allErrors.get(error).add(String.join("-", generalTrace));
+                }
+                else{
+                        HashSet<String> set = new HashSet<>();
+                        set.add(String.join("-", generalTrace));
+                        allErrors.put(error, set);
+                        addLineToGraphCSV();
+                        System.out.println("Error: "+ error);
+                }
         }
 
-        static void addLineToCSV(){
-                        sb.append(System.currentTimeMillis());
-                        sb.append(',');
+        static void addLineToGraphCSV(){
+                sbGraph.append((System.currentTimeMillis()-start));
+                sbGraph.append(',');
                 if(errorProblemFlag) {
-                        sb.append(allErrors.size());
+                        sbGraph.append(allErrors.size());
                 }else{
-                        sb.append(visitedBranches.size());
+                        sbGraph.append(visitedBranches.size());
                 }
-                sb.append('\n');
+                sbGraph.append(',');
+                String keyString = "";
+                for ( String key : allErrors.keySet() ) {
+                       keyString = keyString + key + "-";
+                }
+                keyString = keyString.substring(0,keyString.length()-1);
+                sbGraph.append(keyString);
+                sbGraph.append('\n');
+        }
 
+        static void addLineToGeneralCSV(){
+                List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
+                List<String> traceLowestDistance = getTraceLowestDistance(branchDistancePerTrace);
+                sbGeneral.append("Total Branch Coverage");
+                sbGeneral.append(',');
+                sbGeneral.append(visitedBranches.size());
+                sbGeneral.append('\n');
+
+                sbGeneral.append("Trace with Highest Branch Coverage");
+                sbGeneral.append(',');
+                sbGeneral.append(traceMaxBranchCov);
+                sbGeneral.append('\n');
+
+                sbGeneral.append("HBC");
+                sbGeneral.append(',');
+                sbGeneral.append(branchesPerTrace.get(traceMaxBranchCov.get(0)).size());
+                sbGeneral.append('\n');
+
+
+                sbGeneral.append("Trace with Lowest Branch Distance");
+                sbGeneral.append(',');
+                sbGeneral.append(traceLowestDistance);
+                sbGeneral.append('\n');
+
+                sbGeneral.append("LBC");
+                sbGeneral.append(',');
+                sbGeneral.append(branchDistancePerTrace.get(traceLowestDistance.get(0)));
+                sbGeneral.append('\n');
+
+                sbGeneral.append("Error size");
+                sbGeneral.append(',');
+                sbGeneral.append(allErrors.size());
+                sbGeneral.append('\n');
+
+                for (Map.Entry<String, HashSet<String>> entry : allErrors.entrySet()) {
+                        sbGeneral.append(entry.getKey());
+                        sbGeneral.append(',');
+                        sbGeneral.append(entry.getValue());
+                        sbGeneral.append('\n');
+                }
         }
 }
