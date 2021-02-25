@@ -14,7 +14,7 @@ public class FuzzingLab {
         private static final float K = 1;
         static Random r = new Random();
         static List<String> currentTrace;
-        static int traceLength = 10;
+        static int traceLength = 20;
         static String currentTraceSymbol;
         private static final int permutationNumber = 10;
         private static final boolean errorProblemFlag = true;
@@ -35,7 +35,7 @@ public class FuzzingLab {
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000; //stop after 10 minutes
+        static long end = start + 60*1000*15; //stop after 10 minutes
 
         static HashMap<String, HashSet<String>> allErrors =  new HashMap<>();
         static StringBuilder sbGeneral = new StringBuilder();
