@@ -23,27 +23,31 @@ public class FuzzingLab {
         static HashMap<String, HashSet<Integer>> branchesPerTrace = new HashMap<>();
         static HashMap<String, Float> branchDistancePerTrace = new HashMap<>();
 
+        //The list that keeps the permutations, it is emptied by the time all permutations are computed
         static ArrayList<List<String>> permutationList = new ArrayList<>();
-        static ArrayList<String> permutationListStrings;
 
+        //Initialized after the permutations are created, string keys for us to access their branch distances and coverages
+        static ArrayList<String> permutationListStrings;
         static {permutationListStrings = new ArrayList<String>();}
 
         static int permutationCounter = 0;
+        //the trace that permutations stem from
         static List<String> mainMotherTrace;
 
         static List<String> generalTrace;
         static String generalTraceString;
         static float distanceSumOfTrace = 0;
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000*15; //stop after 10 minutes
+        static long end = start + 60*1000*15; //stop after 15 minutes
 
         static HashMap<String, HashSet<String>> allErrors =  new HashMap<>();
+
+        //StringBuilder for our CSV implementation
         static StringBuilder sbGeneral = new StringBuilder();
         static StringBuilder sbGraph = new StringBuilder();
 
 
         /**
-         * Write your solution that specifies what should happen when a new branch has been found.
          */
         static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
                 //System.out.println(currentTraceSymbol);
@@ -82,6 +86,7 @@ public class FuzzingLab {
 
         /**
          *Branch Distance calculation for type 1, 4 and 5 MyVar types. Combination and operation logic implemented here in the switch statement
+         * This function returns the normalized branch distance so that up in the recursion the predicates can be properly processed
          */
         private static float calculateBranchDistance(MyVar condition) {
                 float branch_distance;
@@ -107,14 +112,7 @@ public class FuzzingLab {
                                 right_side = condition.right;
                                 right_distance = distanceHelper(right_side, right_distance, string_value_right);
                         }
-//                        System.out.println("left distance is : " + left_distance + " right distance is : " +right_distance);
-//                        if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
-//                                String listString_left = string_value_left.stream().map(Object::toString)
-//                                        .collect(Collectors.joining(", "));
-//                                String listString_right = string_value_right.stream().map(Object::toString)
-//                                        .collect(Collectors.joining(", "));
-//                                System.out.println("left string is : " + listString_left + " right sting is : " +listString_right);
-//                        }
+
                         switch(condition.operator) {
                                 case "||":
                                         branch_distance = Math.min((left_distance), (right_distance));
@@ -140,7 +138,6 @@ public class FuzzingLab {
                                 case ">=":
                                         branch_distance = ((left_distance >= right_distance) ? 0 : normalize(right_distance-left_distance));
                                         break;
-
                                 case "==":
                                         if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
                                                 branch_distance = normalize(calculateStringDistance(string_value_left, string_value_right));
@@ -148,7 +145,6 @@ public class FuzzingLab {
                                                 branch_distance = normalize(Math.abs(left_distance-right_distance));
                                         }
                                         break;
-
                                 case "!=":
                                         if(!string_value_left.isEmpty() && !string_value_right.isEmpty()) {
                                                 branch_distance = normalize(!string_value_left.equals(string_value_right) ? 0 : 1);
@@ -156,19 +152,15 @@ public class FuzzingLab {
                                                 branch_distance = normalize(left_distance!=right_distance ? 0 : 1);
                                         }
                                         break;
-
                                 default:
                                         System.err.println("You missed operator "+ condition.operator );
                                         branch_distance= -1;
                         }
-
                 }else{
                         System.err.println("Recursion problem");
                         branch_distance = -1;
-
                 }
 //                System.out.println("Subbranch distance of " + condition.toString() + " is found to be " + branch_distance);
-
                 return branch_distance;
         }
 
@@ -187,20 +179,16 @@ public class FuzzingLab {
                         for (int j = 0; j <= n; j++) {
                                 if (i == 0) {
                                         table[i][j] = j;
-                                }
-                                else if (j == 0) {
+                                }else if (j == 0) {
                                         table[i][j] = i;
-                                }
-                                else if (left.get(i - 1).equals(right.get(j - 1))){
+                                }else if (left.get(i - 1).equals(right.get(j - 1))){
                                         table[i][j] = table[i-1][j-1];
-
                                 }else{
                                         table[i][j] = Math.abs(left.get(i-1) - right.get(j-1))+
                                                 Math.min(Math.min(table[i][j-1], table[i-1][j]), table[i-1][j-1]);
                                 }
                         }
                 }
-
                 return table[m][n];
 
 
@@ -260,7 +248,7 @@ public class FuzzingLab {
                         sbGeneral.append(',');
                         sbGeneral.append("value");
                         sbGeneral.append('\n');
-                        //System.out.println("current trace does not exist, Generating a random trace");
+
                         currentTrace = generateRandomTrace(inputSymbols);
                         generalTrace = new ArrayList<>(currentTrace);
                         mainMotherTrace = new ArrayList<>(currentTrace);
@@ -271,7 +259,6 @@ public class FuzzingLab {
                                 permutationList.add(i, permutation);
                                 permutationListStrings.add(i, String.join("-", permutation));
                         }
-                        //System.out.println("permutations are as follows : " + permutationList);
 
                         nextInput = currentTrace.remove(0);
 
@@ -280,6 +267,7 @@ public class FuzzingLab {
                 // Check if the current trace is empty and if it is
                 // then generate a new random trace.
                 else if (currentTrace.isEmpty()) {
+                        //When all the permutations are calculated
                         if(permutationCounter==permutationNumber){
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 List<String> traceMaxBranchCov = getTraceHighestBranchCoverage();
@@ -302,19 +290,16 @@ public class FuzzingLab {
                                         String permutationString = permutationListStrings.get(i);
                                         branchDistancePerTraceForPermutations.put(permutationString, branchDistancePerTrace.get(permutationString));
                                 }
-                                //System.out.println(branchDistancePerTraceForPermutations);
-                                List<String> permutationWithLowestDistance = getTraceLowestDistance(branchDistancePerTraceForPermutations);
 
+                                List<String> permutationWithLowestDistance = getTraceLowestDistance(branchDistancePerTraceForPermutations);
                                 Float bestPermutationDistance = branchDistancePerTrace.get(permutationWithLowestDistance.get(0));
 
-                                //System.out.println("Permutation " + permutationWithLowestDistance + " has min distance of " + bestPermutationDistance);
-
+                                //Checking if the permutation with the lowest distance is an improvement or not
                                 if(bestPermutationDistance < mainMotherTraceDistance){
                                         generalTraceString =  permutationWithLowestDistance.get(0);
                                         //System.out.println("we have found a better permutation to work from which is " + generalTraceString);
                                         currentTrace = generateTraceFromString(generalTraceString.split("-"));
                                         mainMotherTrace = new ArrayList<>(currentTrace);
-
                                         generalTrace = new ArrayList<>(currentTrace);
                                         List<List<String>> tmp1 = permutationCreator(mainMotherTrace);
                                         for(int i = 0; i<permutationNumber; i++){
@@ -327,7 +312,7 @@ public class FuzzingLab {
                                         while (branchDistancePerTrace.containsKey(String.join("-", currentTrace))) {
                                                 currentTrace = generateRandomTrace(inputSymbols);
                                         }
-                                        System.out.println("All the permutations are worse than the main trace, choosing a random trace to start everything:" + currentTrace);
+//                                        System.out.println("All the permutations are worse than the main trace, choosing a random trace to start everything:" + currentTrace);
                                         generalTrace = new ArrayList<>(currentTrace);
                                         mainMotherTrace = new ArrayList<>(currentTrace);
                                         generalTraceString = String.join("-", generalTrace);
@@ -363,7 +348,7 @@ public class FuzzingLab {
                                         general.close();
                                         System.exit(0);
                                 }
-
+                         //When all the permutations are still being calculated
                         }else{
                                 branchDistancePerTrace.put(generalTraceString, distanceSumOfTrace);
                                 distanceSumOfTrace = 0;
@@ -373,8 +358,6 @@ public class FuzzingLab {
                                 generalTraceString = String.join("-", generalTrace);
                                 nextInput = currentTrace.remove(0);
                                 permutationCounter ++;
-
-
                         }
                 }
                 // If we are not done running on the current trace,
@@ -388,7 +371,10 @@ public class FuzzingLab {
                 return nextInput;
         }
 
-
+        /**
+         * Creating permutations from a given input trace
+         * @return list of permutation traces
+         */
         static  List<List<String>> permutationCreator(List<String> inputTrace){
                 List<List<String>> permutations = new ArrayList<List<String>>();
                 List<String> permutationTrace = new ArrayList<>(inputTrace);
@@ -467,6 +453,8 @@ public class FuzzingLab {
                 return trace;
         }
 
+
+        //Helper function
         static List<String> generateTraceFromString(String[] symbols) {
                 ArrayList<String> trace = new ArrayList<>();
                 for (int i = 0; i < traceLength+1; i++) {
@@ -481,7 +469,6 @@ public class FuzzingLab {
          * @param out the string that has been outputted in the standard out.
          */
         static void output(String out){
-//                System.out.println(out);
 //                System.out.println(out);
         }
 
