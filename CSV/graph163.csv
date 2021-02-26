@@ -1,8 +1,0 @@
-Time,AmountOfErrors
-28895,1,error_37
-33188,2,error_37-error_79
-224459,3,error_3-error_37-error_79
-354410,4,error_65-error_3-error_37-error_79
-411921,5,error_65-error_10-error_3-error_37-error_79
-644000,6,error_65-error_10-error_77-error_3-error_37-error_79
-676367,7,error_65-error_10-error_77-error_3-error_8-error_37-error_79
