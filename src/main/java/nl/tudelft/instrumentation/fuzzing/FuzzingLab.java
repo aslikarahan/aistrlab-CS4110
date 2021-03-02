@@ -91,12 +91,12 @@ public class FuzzingLab {
         private static float calculateBranchDistance(MyVar condition) {
                 float branch_distance;
 
-                if(condition.type == 1){
+                if(condition.type == TypeEnum.BOOL){
                         branch_distance = condition.value ? 0 : 1;
                         return normalize(branch_distance);
                 }
 
-                if(condition.type == 5 || condition.type == 4){
+                if(condition.type == TypeEnum.BINARY || condition.type == TypeEnum.UNARY){
                         MyVar left_side = condition.left;
                         MyVar right_side;
 
@@ -108,7 +108,7 @@ public class FuzzingLab {
 
                         left_distance = distanceHelper(left_side, left_distance, string_value_left);
 
-                        if(condition.type == 5) {
+                        if(condition.type == TypeEnum.BINARY) {
                                 right_side = condition.right;
                                 right_distance = distanceHelper(right_side, right_distance, string_value_right);
                         }
@@ -198,7 +198,7 @@ public class FuzzingLab {
          * For type 4 and 5, since they still have MyVar bases inside, calls the calculateBranchDistance function
          */
         private static float distanceHelper(MyVar side, float distance, ArrayList<Integer> string_value ){
-                switch (side.type){
+                switch (side.type.getValue()){
                         case 1:
                                 //do sth, binary type
                                 distance = normalize(side.value ? 0 : 1);
