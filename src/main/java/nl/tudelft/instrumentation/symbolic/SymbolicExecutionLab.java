@@ -111,6 +111,13 @@ public class SymbolicExecutionLab {
                 //TODO: idk exponent
                 result = new MyVar(c.mkRem(left_var, right_var));
                 break;
+            case "==":
+                //        System.out.println("Left is " + left_var);
+//        System.out.println("Right is " + right_var);
+//        System.out.println("Operator  " + operator);
+//        System.out.println("what we return " + z3var);
+                result = new MyVar(c.mkEq(left_var, right_var));
+                break;
             default:
                 result= new MyVar(PathTracker.ctx.mkFalse());
                 break;
@@ -121,6 +128,10 @@ public class SymbolicExecutionLab {
     static MyVar createStringExpr(SeqExpr left_var, SeqExpr right_var, String operator){
         Context c = PathTracker.ctx;
         Expr z3var = c.mkEq(left_var, right_var);
+//        System.out.println("Left is " + left_var);
+//        System.out.println("Right is " + right_var);
+//        System.out.println("Operator  " + operator);
+//        System.out.println("what we return " + z3var);
         return new MyVar(z3var);
     }
 
@@ -130,25 +141,48 @@ public class SymbolicExecutionLab {
         System.out.println("Assignment name: "+var.name);
         System.out.println("Argument name: "+name);
         System.out.println("what to assign: "+value);
+        Context c = PathTracker.ctx;
+
+        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
+        PathTracker.z3model = c.mkAnd(c.mkEq(z3var, value), PathTracker.z3model);
+
 
     }
-
+    static HashSet <Integer> deneme = new HashSet<>();
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
         // call the solver
-        System.out.println("Found new branch on line "+ line_nr);
-        System.out.println("Condition name: "+condition.name);
-        System.out.println("Condition asd: "+condition.z3var);
-        System.out.println("Value: "+value);
 
+        //If false call the the solver to see if we can get an input, if unsatisfiable ?
+        //if true just add stuff to z3branches!
+        //generic line counter line covarage hash set stuff
+
+        if(value){
+            System.out.println("Found new branch on line "+ line_nr);
+            System.out.println("Condition name: "+condition.name);
+            System.out.println("Condition expression: "+condition.z3var);
+            System.out.println("Value: "+value);
+            Context c = PathTracker.ctx;
+            System.out.print("Model: ");
+            System.out.println(PathTracker.z3model);
+            deneme.add(line_nr);
+        }
+
+        // create var, assign value, add to path constraint
+        // we show how to do it for creating new symbols
+        // please add similar steps to the functions below in order to obtain a path constraint
+//        PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
 
 //        PathTracker.solve(PathTracker.z3model, true);
+//
+//        System.out.print("Model: ");
+//        System.out.println(PathTracker.z3model);
+//        System.out.print("Branches: ");
+//        System.out.println(PathTracker.z3branches);
 
-        //System.out.print("Model: ");
-        //System.out.println(PathTracker.z3model);
-        //System.out.print("Branches: ");
-        //System.out.println(PathTracker.z3branches);
-
-
+        if(line_nr == 70){
+            System.out.println(deneme);
+            System.exit(1);
+        }
 //        System.out.println("Name is: " + condition.name);
 
 
@@ -156,12 +190,15 @@ public class SymbolicExecutionLab {
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // hurray! found a new branch using these new inputs!
+        //  resety and run again with the new input
     }
 
     static String fuzz(String[] inputs){
         // do something useful
         if(r.nextDouble() < 0.01) return "R";
-        return inputs[r.nextInt(inputs.length)];
+        String charlie = inputs[r.nextInt(inputs.length)];
+        System.out.println("The fucking input is: " + charlie);
+        return charlie;
     }
 
     static void output(String out){
