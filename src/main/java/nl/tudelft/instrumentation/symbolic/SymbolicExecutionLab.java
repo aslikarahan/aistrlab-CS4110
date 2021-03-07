@@ -27,7 +27,9 @@ public class SymbolicExecutionLab {
 
     static MyVar createInput(String name, Expr value, Sort s){
         // create an input var, these should be free variables!
-        return new MyVar(PathTracker.ctx.mkString(""));
+        MyVar new_input = new MyVar(value, name);
+        PathTracker.inputs.add(new_input);
+        return new_input;
     }
 
     static MyVar createBoolExpr(BoolExpr var, String operator){
@@ -151,39 +153,34 @@ public class SymbolicExecutionLab {
     static HashSet <Integer> branchCoverage = new HashSet<>();
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
 
-        // call the solver
-
         //If false call the the solver to see if we can get an input, if unsatisfiable ?
         //if true just add stuff to z3branches!
-        //generic line counter line covarage hash set stuff
+        //generic line counter li ne covarage hash set stuff
+
+
         branchCoverage.add(line_nr);
-        System.out.println("Condition expression: "+condition.z3var);
+        System.out.println("Encountered Branch: "+condition.z3var + "in line " + line_nr);
+        System.out.println(PathTracker.z3model);
 
         if(value){
 //            System.out.println("Condition name: "+condition.name);
 //            System.out.println("Value: "+ value);
-            Context c = PathTracker.ctx;
 //            System.out.print("Model: ");
 //            System.out.println(PathTracker.z3model);
+            Context c = PathTracker.ctx;
+            System.out.println("Branch is true - will add and continue");
             PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
         }else{
-            PathTracker.solve((BoolExpr) condition.z3var, true);
+            System.out.println("Branch is false - call the solver");
+            PathTracker.solve((BoolExpr) condition.z3var, false);
         }
-
-//        if(line_nr == 74){
-//            System.out.println(deneme);
-//            System.exit(1);
-//        }
-//        System.out.println("Name is: " + condition.name);
-
 
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // hurray! found a new branch using these new inputs!
         //  resety and run again with the new input
-        System.out.println("The new inputs that satisfy are: " + new_inputs);
-
+        System.out.println("Satisfiable + new input: " + new_inputs);
     }
 
     static String fuzz(String[] inputs){
@@ -192,7 +189,7 @@ public class SymbolicExecutionLab {
         PathTracker.reset();
         if(r.nextDouble() < 0.01) return "R";
         String charlie = inputs[r.nextInt(inputs.length)];
-        System.out.println("The fucking input is: " + charlie);
+        //System.out.println("The random input is: " + charlie);
         return charlie;
     }
 
