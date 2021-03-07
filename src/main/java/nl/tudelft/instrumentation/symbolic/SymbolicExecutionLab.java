@@ -1,6 +1,7 @@
 package nl.tudelft.instrumentation.symbolic;
 
 import java.util.*;
+
 import com.microsoft.z3.*;
 
 import java.util.Random;
@@ -11,8 +12,10 @@ import java.util.Random;
 public class SymbolicExecutionLab {
 
     static Random r = new Random();
-//    public static LinkedList<String> inputs_to_fuzz = new LinkedList<String>();
-    static MyVar createVar(String name, Expr value, Sort s){
+    public static LinkedList<String> inputs_to_fuzz = new LinkedList<String>();
+    static HashSet<Integer> branchCoverage = new HashSet<>();
+
+    static MyVar createVar(String name, Expr value, Sort s) {
         Context c = PathTracker.ctx;
         // create var, assign value, add to path constraint
         // we show how to do it for creating new symbols
@@ -22,34 +25,34 @@ public class SymbolicExecutionLab {
         return new MyVar(z3var, name);
     }
 
-    static MyVar createInput(String name, Expr value, Sort s){
+    static MyVar createInput(String name, Expr value, Sort s) {
         // create an input var, these should be free variables!
         MyVar new_input = new MyVar(value, name);
         PathTracker.inputs.add(new_input);
         return new_input;
     }
 
-    static MyVar createBoolExpr(BoolExpr var, String operator){
+    static MyVar createBoolExpr(BoolExpr var, String operator) {
 
         Context c = PathTracker.ctx;
         MyVar result;
-        switch(operator) {
+        switch (operator) {
             case "!":
                 result = new MyVar(c.mkNot(var));
                 break;
             default:
-                result= new MyVar(PathTracker.ctx.mkFalse());
+                result = new MyVar(PathTracker.ctx.mkFalse());
                 break;
         }
         return result;
     }
 
-    static MyVar createBoolExpr(BoolExpr left_var, BoolExpr right_var, String operator){
+    static MyVar createBoolExpr(BoolExpr left_var, BoolExpr right_var, String operator) {
 
         // any binary expression (&, &&, |, ||)
         Context c = PathTracker.ctx;
         MyVar result;
-        switch(operator) {
+        switch (operator) {
             case "||":
                 result = new MyVar(c.mkOr(left_var, right_var));
                 break;
@@ -63,34 +66,34 @@ public class SymbolicExecutionLab {
                 result = new MyVar(c.mkAnd(left_var, right_var));
                 break;
             default:
-                result= new MyVar(PathTracker.ctx.mkFalse());
-                break;
-        }
-        return result;
-        }
-
-    static MyVar createIntExpr(IntExpr var, String operator){
-        // any unary expression (+, -)
-        Context c = PathTracker.ctx;
-        MyVar result;
-        switch(operator) {
-            case "-":
-                result = new MyVar(c.mkMul(var, c.mkInt("-1")));
-                break;
-            default:
-                result= new MyVar(var);
+                result = new MyVar(PathTracker.ctx.mkFalse());
                 break;
         }
         return result;
     }
 
-    static MyVar createIntExpr(IntExpr left_var, IntExpr right_var, String operator){
+    static MyVar createIntExpr(IntExpr var, String operator) {
+        // any unary expression (+, -)
+        Context c = PathTracker.ctx;
+        MyVar result;
+        switch (operator) {
+            case "-":
+                result = new MyVar(c.mkMul(var, c.mkInt("-1")));
+                break;
+            default:
+                result = new MyVar(var);
+                break;
+        }
+        return result;
+    }
+
+    static MyVar createIntExpr(IntExpr left_var, IntExpr right_var, String operator) {
         // any binary expression (+, -, /, etc)
 //        if(operator == "+" || operator == "-" || operator == "/" || operator == "*" || operator == "%" || operator == "^")
 //            return new MyVar(PathTracker.ctx.mkInt(0));
         Context c = PathTracker.ctx;
         MyVar result;
-        switch(operator) {
+        switch (operator) {
             case "+":
                 result = new MyVar(c.mkAdd(left_var, right_var));
                 break;
@@ -111,55 +114,47 @@ public class SymbolicExecutionLab {
                 result = new MyVar(c.mkRem(left_var, right_var));
                 break;
             case "==":
-                //        System.out.println("Left is " + left_var);
-//        System.out.println("Right is " + right_var);
-//        System.out.println("Operator  " + operator);
-//        System.out.println("what we return " + z3var);
                 result = new MyVar(c.mkEq(left_var, right_var));
                 break;
             default:
-                result= new MyVar(PathTracker.ctx.mkFalse());
+                result = new MyVar(PathTracker.ctx.mkFalse());
                 break;
         }
         return result;
     }
 
-    static MyVar createStringExpr(SeqExpr left_var, SeqExpr right_var, String operator){
+    static MyVar createStringExpr(SeqExpr left_var, SeqExpr right_var, String operator) {
         Context c = PathTracker.ctx;
         Expr z3var = c.mkEq(left_var, right_var);
-//        System.out.println("Left is " + left_var);
-//        System.out.println("Right is " + right_var);
-//        System.out.println("Operator  " + operator);
-//        System.out.println("what we return " + z3var);
         return new MyVar(z3var);
     }
 
-    static void assign(MyVar var, String name, Expr value, Sort s){
+    static void assign(MyVar var, String name, Expr value, Sort s) {
         // all variable assignments, use single static assignment
         Context c = PathTracker.ctx;
         var.z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         PathTracker.z3model = c.mkAnd(c.mkEq(var.z3var, value), PathTracker.z3model);
-
-
     }
-    static HashSet <Integer> branchCoverage = new HashSet<>();
-    static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
+
+
+    static void encounteredNewBranch(MyVar condition, boolean value, int line_nr) {
 
         //If false call the the solver to see if we can get an input, if unsatisfiable ?
         //if true just add stuff to z3branches!
         //generic line counter li ne covarage hash set stuff
-
+//        System.out.println("The branch: " + condition.z3var);
+//        System.out.println("Value: " + value +"__"+line_nr);
+//        System.out.println("The model: ");
+//                System.out.println(PathTracker.z3model);
         Context c = PathTracker.ctx;
-
         branchCoverage.add(line_nr);
-        if(value){
-            System.out.println("Branch is true - will add and continue");
+        if (value) {
+            PathTracker.solve(c.mkEq(condition.z3var, c.mkFalse()), false);
             PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
-        }else{
-            System.out.println("Branch is false - call the solver");
+
+        } else {
             PathTracker.solve(c.mkEq(condition.z3var, c.mkTrue()), false);
         }
-
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
@@ -167,11 +162,12 @@ public class SymbolicExecutionLab {
         //  resety and run again with the new input
 //        if(!new_inputs.isEmpty())
 //            inputs_to_fuzz.addAll(new_inputs);
-
         System.out.println("Satisfiable + new input: " + new_inputs);
     }
 
-    static String fuzz(String[] inputs){
+    static String fuzz(String[] inputs) {
+                PathTracker.reset();
+
         System.out.println("------------------------------------------------------------------------------");
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
         String next_input;
@@ -184,15 +180,19 @@ public class SymbolicExecutionLab {
 //            System.out.println("The next input is: " + next_input);
 //        }
         if (r.nextDouble() < 0.01) return "R";
-            next_input= inputs[r.nextInt(inputs.length)];
+        next_input = inputs[r.nextInt(inputs.length)];
 //        PathTracker.reset();
 
         //System.out.println("The random input is: " + charlie);
         return next_input;
     }
 
-    static void output(String out){
+    static void output(String out) {
 //        System.out.println(out);
     }
 
+    public static void printError(String s) {
+        System.out.println("Error: "+ s);
+
+    }
 }
