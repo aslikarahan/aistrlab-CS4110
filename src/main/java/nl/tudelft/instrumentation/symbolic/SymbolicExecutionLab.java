@@ -137,10 +137,10 @@ public class SymbolicExecutionLab {
 
     static void assign(MyVar var, String name, Expr value, Sort s){
         // all variable assignments, use single static assignment
-        System.out.println("Assignment var: "+var.z3var);
-        System.out.println("Assignment name: "+var.name);
-        System.out.println("Argument name: "+name);
-        System.out.println("what to assign: "+value);
+//        System.out.println("Assignment var: "+var.z3var);
+//        System.out.println("Assignment name: "+var.name);
+//        System.out.println("Argument name: "+name);
+//        System.out.println("what to assign: "+value);
         Context c = PathTracker.ctx;
 
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
@@ -148,41 +148,32 @@ public class SymbolicExecutionLab {
 
 
     }
-    static HashSet <Integer> deneme = new HashSet<>();
+    static HashSet <Integer> branchCoverage = new HashSet<>();
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr){
+
         // call the solver
 
         //If false call the the solver to see if we can get an input, if unsatisfiable ?
         //if true just add stuff to z3branches!
         //generic line counter line covarage hash set stuff
+        branchCoverage.add(line_nr);
+        System.out.println("Condition expression: "+condition.z3var);
 
         if(value){
-            System.out.println("Found new branch on line "+ line_nr);
-            System.out.println("Condition name: "+condition.name);
-            System.out.println("Condition expression: "+condition.z3var);
-            System.out.println("Value: "+value);
+//            System.out.println("Condition name: "+condition.name);
+//            System.out.println("Value: "+ value);
             Context c = PathTracker.ctx;
-            System.out.print("Model: ");
-            System.out.println(PathTracker.z3model);
-            deneme.add(line_nr);
+//            System.out.print("Model: ");
+//            System.out.println(PathTracker.z3model);
+            PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
+        }else{
+            PathTracker.solve((BoolExpr) condition.z3var, true);
         }
 
-        // create var, assign value, add to path constraint
-        // we show how to do it for creating new symbols
-        // please add similar steps to the functions below in order to obtain a path constraint
-//        PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
-
-//        PathTracker.solve(PathTracker.z3model, true);
-//
-//        System.out.print("Model: ");
-//        System.out.println(PathTracker.z3model);
-//        System.out.print("Branches: ");
-//        System.out.println(PathTracker.z3branches);
-
-        if(line_nr == 70){
-            System.out.println(deneme);
-            System.exit(1);
-        }
+//        if(line_nr == 74){
+//            System.out.println(deneme);
+//            System.exit(1);
+//        }
 //        System.out.println("Name is: " + condition.name);
 
 
@@ -191,10 +182,14 @@ public class SymbolicExecutionLab {
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // hurray! found a new branch using these new inputs!
         //  resety and run again with the new input
+        System.out.println("The new inputs that satisfy are: " + new_inputs);
+
     }
 
     static String fuzz(String[] inputs){
-        // do something useful
+        System.out.println("------------------------------------------------------------------------------");
+        System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
+        PathTracker.reset();
         if(r.nextDouble() < 0.01) return "R";
         String charlie = inputs[r.nextInt(inputs.length)];
         System.out.println("The fucking input is: " + charlie);
