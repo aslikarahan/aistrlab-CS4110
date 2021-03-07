@@ -3,10 +3,7 @@ package nl.tudelft.instrumentation.symbolic;
 import java.util.*;
 import com.microsoft.z3.*;
 
-import javax.sound.midi.Soundbank;
 import java.util.Random;
-import java.io.FileWriter;
-import java.io.IOException;
 
 /**
  * You should write your solution using this class.
@@ -14,7 +11,7 @@ import java.io.IOException;
 public class SymbolicExecutionLab {
 
     static Random r = new Random();
-
+//    public static LinkedList<String> inputs_to_fuzz = new LinkedList<String>();
     static MyVar createVar(String name, Expr value, Sort s){
         Context c = PathTracker.ctx;
         // create var, assign value, add to path constraint
@@ -139,14 +136,9 @@ public class SymbolicExecutionLab {
 
     static void assign(MyVar var, String name, Expr value, Sort s){
         // all variable assignments, use single static assignment
-//        System.out.println("Assignment var: "+var.z3var);
-//        System.out.println("Assignment name: "+var.name);
-//        System.out.println("Argument name: "+name);
-//        System.out.println("what to assign: "+value);
         Context c = PathTracker.ctx;
-
-        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
-        PathTracker.z3model = c.mkAnd(c.mkEq(z3var, value), PathTracker.z3model);
+        var.z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
+        PathTracker.z3model = c.mkAnd(c.mkEq(var.z3var, value), PathTracker.z3model);
 
 
     }
@@ -157,22 +149,15 @@ public class SymbolicExecutionLab {
         //if true just add stuff to z3branches!
         //generic line counter li ne covarage hash set stuff
 
+        Context c = PathTracker.ctx;
 
         branchCoverage.add(line_nr);
-        System.out.println("Encountered Branch: "+condition.z3var + "in line " + line_nr);
-        System.out.println(PathTracker.z3model);
-
         if(value){
-//            System.out.println("Condition name: "+condition.name);
-//            System.out.println("Value: "+ value);
-//            System.out.print("Model: ");
-//            System.out.println(PathTracker.z3model);
-            Context c = PathTracker.ctx;
             System.out.println("Branch is true - will add and continue");
             PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
         }else{
             System.out.println("Branch is false - call the solver");
-            PathTracker.solve((BoolExpr) condition.z3var, false);
+            PathTracker.solve(c.mkEq(condition.z3var, c.mkTrue()), false);
         }
 
     }
@@ -180,17 +165,30 @@ public class SymbolicExecutionLab {
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
         // hurray! found a new branch using these new inputs!
         //  resety and run again with the new input
+//        if(!new_inputs.isEmpty())
+//            inputs_to_fuzz.addAll(new_inputs);
+
         System.out.println("Satisfiable + new input: " + new_inputs);
     }
 
     static String fuzz(String[] inputs){
         System.out.println("------------------------------------------------------------------------------");
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
-        PathTracker.reset();
-        if(r.nextDouble() < 0.01) return "R";
-        String charlie = inputs[r.nextInt(inputs.length)];
+        String next_input;
+//        System.out.println("Inputs to fuzz list is  "+ inputs_to_fuzz);
+//        if(inputs_to_fuzz.isEmpty()) {
+//            if (r.nextDouble() < 0.01) return "R";
+//            next_input= inputs[r.nextInt(inputs.length)];
+//        }else{
+//            next_input = inputs_to_fuzz.pop();
+//            System.out.println("The next input is: " + next_input);
+//        }
+        if (r.nextDouble() < 0.01) return "R";
+            next_input= inputs[r.nextInt(inputs.length)];
+//        PathTracker.reset();
+
         //System.out.println("The random input is: " + charlie);
-        return charlie;
+        return next_input;
     }
 
     static void output(String out){
