@@ -27,9 +27,20 @@ public class SymbolicExecutionLab {
 
     static MyVar createInput(String name, Expr value, Sort s) {
         // create an input var, these should be free variables!
-        MyVar new_input = new MyVar(value, name);
+        Context c = PathTracker.ctx;
+
+        System.out.println("NEW INPUT VALUE: " +  value);
+        Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
+        MyVar new_input = new MyVar(z3var, name);
         PathTracker.inputs.add(new_input);
         return new_input;
+
+//        OLD CODE
+//        MyVar new_input = new MyVar(value, name);
+//        PathTracker.inputs.add(new_input);
+//        System.out.println("In createInput: " + new_input.z3var + " - " + new_input.name);
+//        return new_input;
+
     }
 
     static MyVar createBoolExpr(BoolExpr var, String operator) {
@@ -116,6 +127,7 @@ public class SymbolicExecutionLab {
             case "==":
                 result = new MyVar(c.mkEq(left_var, right_var));
                 break;
+
             default:
                 result = new MyVar(PathTracker.ctx.mkFalse());
                 break;
@@ -141,11 +153,11 @@ public class SymbolicExecutionLab {
 
         //If false call the the solver to see if we can get an input, if unsatisfiable ?
         //if true just add stuff to z3branches!
-        //generic line counter li ne covarage hash set stuff
-//        System.out.println("The branch: " + condition.z3var);
-//        System.out.println("Value: " + value +"__"+line_nr);
-//        System.out.println("The model: ");
-//                System.out.println(PathTracker.z3model);
+
+        //System.out.println("New branch: " + condition.z3var);
+        //System.out.println("Value: " + value +"__"+line_nr);
+        //System.out.println("The model: " + PathTracker.z3model);
+
         Context c = PathTracker.ctx;
         branchCoverage.add(line_nr);
         if (value) {
@@ -162,34 +174,35 @@ public class SymbolicExecutionLab {
         //  resety and run again with the new input
 //        if(!new_inputs.isEmpty())
 //            inputs_to_fuzz.addAll(new_inputs);
+
+        //System.out.println("In newSatisfiableInput: " + new_inputs);
         for(String input : new_inputs){
-            inputs_to_fuzz.add(input);
+            inputs_to_fuzz.add(input.substring(1, input.length() - 1));
         }
-        System.out.println("Satisfiable + all inputs: " + inputs_to_fuzz);
     }
 
     static String fuzz(String[] inputs) {
 
         PathTracker.reset();
-
+        System.out.println("--------------------------- R E S E T --------------------------- ");
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
         String next_input;
+        System.out.println("List to fuzz: " + inputs_to_fuzz);
 //        System.out.println("Inputs to fuzz list is  "+ inputs_to_fuzz);
-//        if(inputs_to_fuzz.isEmpty()) {
-//            if (r.nextDouble() < 0.01) return "R";
-//            next_input= inputs[r.nextInt(inputs.length)];
-//        }else{
-//            next_input = inputs_to_fuzz.pop();
-//            System.out.println("The next input is: " + next_input);
-//        }
-        if (r.nextDouble() < 0.01) {
-            System.out.println("------------------------------------------------------------------------------");
-            return "R";
+        if(inputs_to_fuzz.isEmpty()) {
+            if (r.nextDouble() < 0.01) return "R";
+            next_input= inputs[r.nextInt(inputs.length)];
+            System.out.println("Random input: " + next_input);
+        }else{
+            next_input = inputs_to_fuzz.pop();
+            System.out.println("The next input is: " + next_input);
         }
-        next_input = inputs[r.nextInt(inputs.length)];
-//        PathTracker.reset();
+//        if (r.nextDouble() < 0.01) {
+//            System.out.println("------------------------------------------------------------------------------");
+//            return "R";
+//        }
+//        next_input = inputs[r.nextInt(inputs.length)];
 
-        System.out.println("The random input is: " + next_input);
         return next_input;
     }
 
@@ -199,6 +212,5 @@ public class SymbolicExecutionLab {
 
     public static void printError(String s) {
         System.out.println("Error: "+ s);
-
     }
 }

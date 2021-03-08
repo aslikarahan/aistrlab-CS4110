@@ -52,7 +52,7 @@ public class PathTracker {
             }
             SymbolicExecutionLab.newSatisfiableInput(new_inputs);
         } else {
-            System.out.println("unsatisfiable");
+            //System.out.println("unsatisfiable");
         }
     }
 
