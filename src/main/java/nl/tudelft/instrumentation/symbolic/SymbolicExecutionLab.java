@@ -150,10 +150,10 @@ public class SymbolicExecutionLab {
         branchCoverage.add(line_nr);
         if (value) {
             PathTracker.solve(c.mkEq(condition.z3var, c.mkFalse()), false);
-            PathTracker.z3branches = c.mkAnd((BoolExpr) condition.z3var, PathTracker.z3branches);
-
+            PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkTrue()), PathTracker.z3branches);
         } else {
             PathTracker.solve(c.mkEq(condition.z3var, c.mkTrue()), false);
+            PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkFalse()), PathTracker.z3branches);
         }
     }
 
@@ -162,13 +162,16 @@ public class SymbolicExecutionLab {
         //  resety and run again with the new input
 //        if(!new_inputs.isEmpty())
 //            inputs_to_fuzz.addAll(new_inputs);
-        System.out.println("Satisfiable + new input: " + new_inputs);
+        for(String input : new_inputs){
+            inputs_to_fuzz.add(input);
+        }
+        System.out.println("Satisfiable + all inputs: " + inputs_to_fuzz);
     }
 
     static String fuzz(String[] inputs) {
-                PathTracker.reset();
 
-        System.out.println("------------------------------------------------------------------------------");
+        PathTracker.reset();
+
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
         String next_input;
 //        System.out.println("Inputs to fuzz list is  "+ inputs_to_fuzz);
@@ -179,11 +182,14 @@ public class SymbolicExecutionLab {
 //            next_input = inputs_to_fuzz.pop();
 //            System.out.println("The next input is: " + next_input);
 //        }
-        if (r.nextDouble() < 0.01) return "R";
+        if (r.nextDouble() < 0.01) {
+            System.out.println("------------------------------------------------------------------------------");
+            return "R";
+        }
         next_input = inputs[r.nextInt(inputs.length)];
 //        PathTracker.reset();
 
-        //System.out.println("The random input is: " + charlie);
+        System.out.println("The random input is: " + next_input);
         return next_input;
     }
 
