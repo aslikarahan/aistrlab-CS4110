@@ -14,6 +14,7 @@ public class SymbolicExecutionLab {
     static Random r = new Random();
     public static LinkedList<String> inputs_to_fuzz = new LinkedList<String>();
     static HashSet<Integer> branchCoverage = new HashSet<>();
+    static boolean unsat = false;
 
     static MyVar createVar(String name, Expr value, Sort s) {
         Context c = PathTracker.ctx;
@@ -27,9 +28,8 @@ public class SymbolicExecutionLab {
 
     static MyVar createInput(String name, Expr value, Sort s) {
         // create an input var, these should be free variables!
-        Context c = PathTracker.ctx;
 
-        System.out.println("NEW INPUT VALUE: " +  value);
+        Context c = PathTracker.ctx;
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         MyVar new_input = new MyVar(z3var, name);
         PathTracker.inputs.add(new_input);
@@ -40,21 +40,22 @@ public class SymbolicExecutionLab {
 //        PathTracker.inputs.add(new_input);
 //        System.out.println("In createInput: " + new_input.z3var + " - " + new_input.name);
 //        return new_input;
-
     }
 
     static MyVar createBoolExpr(BoolExpr var, String operator) {
-
         Context c = PathTracker.ctx;
-        MyVar result;
+        Expr z3var;
         switch (operator) {
             case "!":
-                result = new MyVar(c.mkNot(var));
+                z3var = c.mkNot(var);
                 break;
             default:
-                result = new MyVar(PathTracker.ctx.mkFalse());
+                z3var = c.mkFalse();
                 break;
         }
+
+        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
+        MyVar result = new MyVar(z3var);
         return result;
     }
 
@@ -62,39 +63,39 @@ public class SymbolicExecutionLab {
 
         // any binary expression (&, &&, |, ||)
         Context c = PathTracker.ctx;
-        MyVar result;
+        Expr z3var;
         switch (operator) {
             case "||":
-                result = new MyVar(c.mkOr(left_var, right_var));
+            case "|":
+                z3var = c.mkOr(left_var, right_var);
                 break;
             case "&&":
-                result = new MyVar(c.mkAnd(left_var, right_var));
-                break;
-            case "|":
-                result = new MyVar(c.mkOr(left_var, right_var));
-                break;
             case "&":
-                result = new MyVar(c.mkAnd(left_var, right_var));
+                z3var = c.mkAnd(left_var, right_var);
                 break;
             default:
-                result = new MyVar(PathTracker.ctx.mkFalse());
+                z3var =  c.mkFalse();
                 break;
         }
+        MyVar result = new MyVar(z3var);
+        PathTracker.z3model = c.mkAnd(c.mkEq(z3var, z3var), PathTracker.z3model);
         return result;
     }
 
     static MyVar createIntExpr(IntExpr var, String operator) {
         // any unary expression (+, -)
         Context c = PathTracker.ctx;
-        MyVar result;
+        Expr z3var;
         switch (operator) {
             case "-":
-                result = new MyVar(c.mkMul(var, c.mkInt("-1")));
+                z3var = c.mkMul(var, c.mkInt("-1"));
                 break;
             default:
-                result = new MyVar(var);
+                z3var = var;
                 break;
         }
+        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
+        MyVar result = new MyVar(z3var);
         return result;
     }
 
@@ -103,35 +104,35 @@ public class SymbolicExecutionLab {
 //        if(operator == "+" || operator == "-" || operator == "/" || operator == "*" || operator == "%" || operator == "^")
 //            return new MyVar(PathTracker.ctx.mkInt(0));
         Context c = PathTracker.ctx;
-        MyVar result;
+        Expr z3var;
         switch (operator) {
             case "+":
-                result = new MyVar(c.mkAdd(left_var, right_var));
+                z3var = c.mkAdd(left_var, right_var);
                 break;
             case "-":
-                result = new MyVar(c.mkSub(left_var, right_var));
+                z3var = c.mkSub(left_var, right_var);
                 break;
             case "/":
-                result = new MyVar(c.mkDiv(left_var, right_var));
+                z3var = c.mkDiv(left_var, right_var);
                 break;
             case "*":
-                result = new MyVar(c.mkMul(left_var, right_var));
+                z3var = c.mkMul(left_var, right_var);
                 break;
             case "%":
-                result = new MyVar(c.mkRem(left_var, right_var));
+                z3var = c.mkRem(left_var, right_var);
                 break;
             case "^":
-                //TODO: idk exponent
-                result = new MyVar(c.mkRem(left_var, right_var));
+                //TODO: idk
+                z3var = c.mkRem(left_var, right_var);
                 break;
             case "==":
-                result = new MyVar(c.mkEq(left_var, right_var));
+                z3var = c.mkEq(left_var, right_var);
                 break;
-
             default:
-                result = new MyVar(PathTracker.ctx.mkFalse());
+                z3var = PathTracker.ctx.mkFalse();
                 break;
         }
+        MyVar result = new MyVar(z3var);
         return result;
     }
 
@@ -153,10 +154,8 @@ public class SymbolicExecutionLab {
 
         //If false call the the solver to see if we can get an input, if unsatisfiable ?
         //if true just add stuff to z3branches!
-
-        //System.out.println("New branch: " + condition.z3var);
-        //System.out.println("Value: " + value +"__"+line_nr);
-        //System.out.println("The model: " + PathTracker.z3model);
+        System.out.println("EncounteredNewBranch: " + condition.z3var);
+        System.out.println("Value: " + value + " - " + line_nr);
 
         Context c = PathTracker.ctx;
         branchCoverage.add(line_nr);
@@ -166,39 +165,58 @@ public class SymbolicExecutionLab {
         } else {
             PathTracker.solve(c.mkEq(condition.z3var, c.mkTrue()), false);
             PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkFalse()), PathTracker.z3branches);
+
         }
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
-        // hurray! found a new branch using these new inputs!
-        //  resety and run again with the new input
-//        if(!new_inputs.isEmpty())
-//            inputs_to_fuzz.addAll(new_inputs);
-
-        //System.out.println("In newSatisfiableInput: " + new_inputs);
+        //System.out.println("SATISFIABLE with model: "+ PathTracker.z3model);
+        //System.out.println("SATISFIABLE with branches: "+ PathTracker.z3branches);
+        System.out.println("New inputs: " + new_inputs);
         for(String input : new_inputs){
-            inputs_to_fuzz.add(input.substring(1, input.length() - 1));
+            if(input.equals("\"R\"")){
+                unsat = true;
+            }else {
+                inputs_to_fuzz.add(input.substring(1, input.length() - 1));
+            }
         }
     }
 
     static String fuzz(String[] inputs) {
+        System.out.println("List to fuzz: " + inputs_to_fuzz);
+        if(!inputs_to_fuzz.isEmpty())
+            inputs_to_fuzz.add("R"); // add to end of trace
+        System.out.println("--------------------------- F U Z Z  --------------------------- ");
+        //System.out.println("Model: " + PathTracker.z3model);
+        //System.out.println("Branches: " + PathTracker.z3branches);
 
-        PathTracker.reset();
-        System.out.println("--------------------------- R E S E T --------------------------- ");
+
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
         String next_input;
-        System.out.println("List to fuzz: " + inputs_to_fuzz);
+
+//        System.out.println("List to fuzz: " + inputs_to_fuzz);
 //        System.out.println("Inputs to fuzz list is  "+ inputs_to_fuzz);
         if(inputs_to_fuzz.isEmpty()) {
             if (r.nextDouble() < 0.01) return "R";
             next_input= inputs[r.nextInt(inputs.length)];
-            System.out.println("Random input: " + next_input);
         }else{
             next_input = inputs_to_fuzz.pop();
-            System.out.println("The next input is: " + next_input);
+            while(next_input.equals("R")){
+                PathTracker.reset();
+                if(inputs_to_fuzz.isEmpty()){
+                    next_input= inputs[r.nextInt(inputs.length)];
+                }else{
+                    next_input = inputs_to_fuzz.pop();
+
+                }
+            }
         }
+        if(next_input.equals("\"\"")){
+            next_input= inputs[r.nextInt(inputs.length)];
+        }
+
 //        if (r.nextDouble() < 0.01) {
-//            System.out.println("------------------------------------------------------------------------------");
+//            //System.out.println("------------------------------------------------------------------------------");
 //            return "R";
 //        }
 //        next_input = inputs[r.nextInt(inputs.length)];
