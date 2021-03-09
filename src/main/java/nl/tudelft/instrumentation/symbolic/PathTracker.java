@@ -58,7 +58,7 @@ public class PathTracker {
             System.out.println("unsatisfiable");
             if(!setR) {
                 LinkedList<String> new_inputs = new LinkedList<String>();
-                new_inputs.add("\"R\"");
+                new_inputs.add("\"#\"");
                 SymbolicExecutionLab.newSatisfiableInput(new_inputs);
                 setR = true;
             }

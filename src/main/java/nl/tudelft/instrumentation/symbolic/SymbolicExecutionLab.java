@@ -54,7 +54,7 @@ public class SymbolicExecutionLab {
                 break;
         }
 
-        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
+//        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
         MyVar result = new MyVar(z3var);
         return result;
     }
@@ -78,7 +78,7 @@ public class SymbolicExecutionLab {
                 break;
         }
         MyVar result = new MyVar(z3var);
-        PathTracker.z3model = c.mkAnd(c.mkEq(z3var, z3var), PathTracker.z3model);
+//        PathTracker.z3model = c.mkAnd(c.mkEq(z3var, z3var), PathTracker.z3model);
         return result;
     }
 
@@ -94,7 +94,7 @@ public class SymbolicExecutionLab {
                 z3var = var;
                 break;
         }
-        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
+//        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
         MyVar result = new MyVar(z3var);
         return result;
     }
@@ -174,7 +174,7 @@ public class SymbolicExecutionLab {
         //System.out.println("SATISFIABLE with branches: "+ PathTracker.z3branches);
         System.out.println("New inputs: " + new_inputs);
         for(String input : new_inputs){
-            if(input.equals("\"R\"")){
+            if(input.equals("\"#\"")){
                 unsat = true;
             }else {
                 inputs_to_fuzz.add(input.substring(1, input.length() - 1));
@@ -183,25 +183,21 @@ public class SymbolicExecutionLab {
     }
 
     static String fuzz(String[] inputs) {
-        System.out.println("List to fuzz: " + inputs_to_fuzz);
         if(!inputs_to_fuzz.isEmpty())
-            inputs_to_fuzz.add("R"); // add to end of trace
-        System.out.println("--------------------------- F U Z Z  --------------------------- ");
-        //System.out.println("Model: " + PathTracker.z3model);
-        //System.out.println("Branches: " + PathTracker.z3branches);
-
-
+            inputs_to_fuzz.add("#"); // add to end of trace except for in the beginning
+        System.out.println("List to fuzz: " + inputs_to_fuzz);
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
+
+
+        System.out.println("--------------------------- F U Z Z  --------------------------- ");
         String next_input;
 
-//        System.out.println("List to fuzz: " + inputs_to_fuzz);
-//        System.out.println("Inputs to fuzz list is  "+ inputs_to_fuzz);
         if(inputs_to_fuzz.isEmpty()) {
-            if (r.nextDouble() < 0.01) return "R";
+            if (r.nextDouble() < 0.01) return "#";
             next_input= inputs[r.nextInt(inputs.length)];
         }else{
             next_input = inputs_to_fuzz.pop();
-            while(next_input.equals("R")){
+            while(next_input.equals("#")){
                 PathTracker.reset();
                 if(inputs_to_fuzz.isEmpty()){
                     next_input= inputs[r.nextInt(inputs.length)];
@@ -211,15 +207,10 @@ public class SymbolicExecutionLab {
                 }
             }
         }
+
         if(next_input.equals("\"\"")){
             next_input= inputs[r.nextInt(inputs.length)];
         }
-
-//        if (r.nextDouble() < 0.01) {
-//            //System.out.println("------------------------------------------------------------------------------");
-//            return "R";
-//        }
-//        next_input = inputs[r.nextInt(inputs.length)];
 
         return next_input;
     }
