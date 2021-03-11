@@ -13,14 +13,12 @@ public class PathTracker {
 
     public static LinkedList<MyVar> inputs = new LinkedList<MyVar>();
 
-    public static boolean setR = false;
-
     public static void reset(){
         z3counter  = 1;
         z3model    = ctx.mkTrue();
         z3branches = ctx.mkTrue();
         inputs.clear();
-        setR = false;
+        System.gc();
     }
 
     /**
@@ -55,13 +53,8 @@ public class PathTracker {
             }
             SymbolicExecutionLab.newSatisfiableInput(new_inputs);
         } else {
-            System.out.println("unsatisfiable");
-            if(!setR) {
-                LinkedList<String> new_inputs = new LinkedList<String>();
-                new_inputs.add("\"#\"");
-                SymbolicExecutionLab.newSatisfiableInput(new_inputs);
-                setR = true;
-            }
+            //System.out.println("unsatisfiable");
+
         }
     }
 
