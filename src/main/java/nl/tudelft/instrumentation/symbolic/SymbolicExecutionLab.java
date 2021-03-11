@@ -24,7 +24,7 @@ public class SymbolicExecutionLab {
     static int traceLength = 20;
 
     static long start = System.currentTimeMillis();
-    static long end = start + 60*1000/6; //stop after 10 minutes
+    static long end = start + 60*1000*1; //stop after 10 minutes
 
     static StringBuilder sbInformation = new StringBuilder();
 
@@ -241,8 +241,9 @@ public class SymbolicExecutionLab {
             LocalDateTime now = LocalDateTime.now();
             String hour = String.valueOf(now.getHour());
             String minute = String.valueOf(now.getMinute());
+            String sec = String.valueOf(now.getSecond());
             try {
-                graph = new PrintWriter(new File("CSV_Symbolic/graph"+hour+minute+"-"+branchCoverage.size()+".csv"));
+                graph = new PrintWriter(new File("CSV_Symbolic/graph"+hour+minute+sec+"-"+branchCoverage.size()+".csv"));
             } catch (FileNotFoundException ex) {
                 ex.printStackTrace();
             }
