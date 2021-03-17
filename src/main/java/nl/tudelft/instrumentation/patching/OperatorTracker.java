@@ -94,7 +94,7 @@ public class OperatorTracker {
      */
     public static void readTests(){
         try (Stream<String> stream = new BufferedReader(
-                new InputStreamReader(OperatorTracker.class.getResourceAsStream("/tests.txt"))).lines()
+                new InputStreamReader(OperatorTracker.class.getResourceAsStream("/Problem1Testcases.txt"))).lines()
         )
         {
             stream.forEach(s -> {
