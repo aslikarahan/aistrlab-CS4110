@@ -20,39 +20,29 @@ public class SymbolicExecutionLab {
     static HashSet<Integer> branchCoverage = new HashSet<>();
     static HashSet<String> errorCodes = new HashSet<>();
 
-    static LinkedList<String> currentTrace;
-    static int traceLength = 20;
+    static LinkedList<String> currentTrace = new LinkedList<String>();
+    static int traceLength = 26;
 
     static long start = System.currentTimeMillis();
-    static long end = start + 60*1000*1; //stop after 10 minutes
+    static long end = start + 60*1000*15; //stop after 10 minutes
 
     static StringBuilder sbInformation = new StringBuilder();
+    static boolean firstInit = true;
 
 
     static MyVar createVar(String name, Expr value, Sort s) {
         Context c = PathTracker.ctx;
-        // create var, assign value, add to path constraint
-        // we show how to do it for creating new symbols
-        // please add similar steps to the functions below in order to obtain a path constraint
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         PathTracker.z3model = c.mkAnd(c.mkEq(z3var, value), PathTracker.z3model);
         return new MyVar(z3var, name);
     }
 
     static MyVar createInput(String name, Expr value, Sort s) {
-        // create an input var, these should be free variables!
-
         Context c = PathTracker.ctx;
         Expr z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         MyVar new_input = new MyVar(z3var, name);
         PathTracker.inputs.add(new_input);
         return new_input;
-
-//        OLD CODE
-//        MyVar new_input = new MyVar(value, name);
-//        PathTracker.inputs.add(new_input);
-//        System.out.println("In createInput: " + new_input.z3var + " - " + new_input.name);
-//        return new_input;
     }
 
     static MyVar createBoolExpr(BoolExpr var, String operator) {
@@ -72,7 +62,6 @@ public class SymbolicExecutionLab {
     }
 
     static MyVar createBoolExpr(BoolExpr left_var, BoolExpr right_var, String operator) {
-        // any binary expression (&, &&, |, ||)
         Context c = PathTracker.ctx;
         Expr z3var;
         switch (operator) {
@@ -93,7 +82,6 @@ public class SymbolicExecutionLab {
     }
 
     static MyVar createIntExpr(IntExpr var, String operator) {
-        // any unary expression (+, -)
         Context c = PathTracker.ctx;
         Expr z3var;
         switch (operator) {
@@ -105,15 +93,11 @@ public class SymbolicExecutionLab {
                 z3var = var;
                 break;
         }
-//        PathTracker.z3model = c.mkAnd(c.mkEq(var, z3var), PathTracker.z3model);
         MyVar result = new MyVar(z3var);
         return result;
     }
 
     static MyVar createIntExpr(IntExpr left_var, IntExpr right_var, String operator) {
-        // any binary expression (+, -, /, etc)
-//        if(operator == "+" || operator == "-" || operator == "/" || operator == "*" || operator == "%" || operator == "^")
-//            return new MyVar(PathTracker.ctx.mkInt(0));
         Context c = PathTracker.ctx;
         Expr z3var;
         switch (operator) {
@@ -133,7 +117,6 @@ public class SymbolicExecutionLab {
                 z3var = c.mkRem(left_var, right_var);
                 break;
             case "^":
-                //TODO: idk
                 z3var = c.mkRem(left_var, right_var);
                 break;
             case "==":
@@ -154,37 +137,27 @@ public class SymbolicExecutionLab {
     }
 
     static void assign(MyVar var, String name, Expr value, Sort s) {
-        // all variable assignments, use single static assignment
         Context c = PathTracker.ctx;
         var.z3var = c.mkConst(c.mkSymbol(name + "_" + PathTracker.z3counter++), s);
         PathTracker.z3model = c.mkAnd(c.mkEq(var.z3var, value), PathTracker.z3model);
     }
 
-
+    /*
+    If the branch has not been covered yet - then we want to solve the opposite value and will put
+    the solution (the input traces to reach the opposite value branch) into the global list.
+    When seeing a branch, we will add it to z3branches.
+     */
     static void encounteredNewBranch(MyVar condition, boolean value, int line_nr) {
-//        Context c = PathTracker.ctx;
-//        if (value) {
-//            if (condition.z3var.toString().contains("input"))
-//                PathTracker.solve(c.mkEq(condition.z3var, c.mkFalse()), false);
-//            PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkTrue()), PathTracker.z3branches);
-//        } else {
-//            if (condition.z3var.toString().contains("input"))
-//                PathTracker.solve(c.mkEq(condition.z3var, c.mkTrue()), false);
-//            PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkFalse()), PathTracker.z3branches);
-//        }
-//        branchCoverage.add(line_nr);
-
-
         Context c = PathTracker.ctx;
         if (value) {
             if(!branchCoverage.contains(line_nr)) {
-                if (condition.z3var.toString().contains("input"))
+//                if (condition.z3var.toString().contains("input"))
                     PathTracker.solve(c.mkEq(condition.z3var, c.mkFalse()), false);
             }
             PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkTrue()), PathTracker.z3branches);
         } else {
             if(!branchCoverage.contains(line_nr)) {
-                if (condition.z3var.toString().contains("input"))
+//                if (condition.z3var.toString().contains("input"))
                     PathTracker.solve(c.mkEq(condition.z3var, c.mkTrue()), false);
             }
             PathTracker.z3branches = c.mkAnd(c.mkEq(condition.z3var, c.mkFalse()), PathTracker.z3branches);
@@ -193,14 +166,6 @@ public class SymbolicExecutionLab {
     }
 
     static void newSatisfiableInput(LinkedList<String> new_inputs) {
-        //System.out.println("SATISFIABLE with model: "+ PathTracker.z3model);
-        //System.out.println("SATISFIABLE with branches: "+ PathTracker.z3branches);
-//        inputs_to_fuzz.add("#");
-//        System.out.println("New inputs: " + new_inputs);
-//        for(String input : new_inputs){
-//                inputs_to_fuzz.add(input.substring(1, input.length() - 1));
-//        }
-        //inputs_to_fuzz.add(new_inputs);
         LinkedList<String> tmp = new LinkedList<>();
         for(String input : new_inputs){
                 tmp.add(input.substring(1, input.length() - 1));
@@ -208,6 +173,9 @@ public class SymbolicExecutionLab {
         inputs_to_fuzz.add(tmp);
     }
 
+    /*
+    We create a random new trace
+     */
     static void createTrace(String[] inputs){
         for(int i = 0; i < traceLength-1; i++){
             currentTrace.add(inputs[r.nextInt(inputs.length)]);
@@ -215,6 +183,9 @@ public class SymbolicExecutionLab {
         currentTrace.add("#");
     }
 
+    /*
+    We extend the trace to the length of the tracelength
+     */
     static void extendTrace(String[] inputs){
         for(int i = currentTrace.size(); i < traceLength-1; i++){
             currentTrace.add(inputs[r.nextInt(inputs.length)]);
@@ -223,19 +194,25 @@ public class SymbolicExecutionLab {
     }
 
     static String fuzz(String[] inputs) {
+        /*
+        Some initialization for the creation of CSV
+         */
         String nextInput = null;
-        if (currentTrace == null) {
+        if (firstInit) {
             sbInformation.append("Time");
             sbInformation.append(',');
-            sbInformation.append("Errorcode");
+            sbInformation.append("AmountOfErrors");
             sbInformation.append('\n');
-            currentTrace = new LinkedList<String>();
+            firstInit = false;
         }
-
-        //System.out.println("List to fuzz: " + inputs_to_fuzz);
+        System.out.println("List to fuzz: " + inputs_to_fuzz);
         System.out.println("Current Trace: " + currentTrace);
         System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
         System.out.println("Error Codes: " + errorCodes);
+
+        /*
+        If the time is over - we want to save the information in a CSV.
+         */
         if (System.currentTimeMillis() > end) {
             PrintWriter graph = null;
             LocalDateTime now = LocalDateTime.now();
@@ -252,10 +229,18 @@ public class SymbolicExecutionLab {
             graph.close();
             System.exit(0);
         }
+
+        /*
+        Here we go!!
+         */
         System.out.println("--------------------------- F U Z Z  --------------------------- ");
         String next_input;
 
-
+        /*
+        Check if trace is not empty - if not empty, then take the next element from trace.
+        If the input is an empty string ("") - then we want to use only viable inputs.
+        If the input is the reset symbol (#) - then we want to reset.
+         */
         if(!currentTrace.isEmpty()){
             next_input = currentTrace.pop();
             if(next_input.isEmpty()){
@@ -265,8 +250,12 @@ public class SymbolicExecutionLab {
                 PathTracker.reset();
                 System.out.println("RESET");
             }
-            //Trace is only empty after popping if the last sign was "#"
         }
+         /*
+        If the trace is empty - we want to reset.
+        If the global list is empty - we want to create a random input trace.
+        If there are other input traces - we choose a random input trace to avoid bias.
+         */
         else{
             PathTracker.reset();
             System.out.println("RESET");
@@ -286,39 +275,6 @@ public class SymbolicExecutionLab {
         return next_input;
     }
 
-//    static String fuzz_old(String[] inputs) {
-//        System.out.println("List to fuzz: " + inputs_to_fuzz);
-//        System.out.println("The branch coverage size for the previous input is: " + branchCoverage.size());
-//        System.out.println("Error Codes: " + errorCodes);
-//        if (System.currentTimeMillis() > end) {
-//            System.exit(0);
-//        }
-//        System.out.println("--------------------------- F U Z Z  --------------------------- ");
-//        String next_input;
-//
-//        if(inputs_to_fuzz.isEmpty()) {
-//            if (r.nextDouble() < 0.01) {
-//                PathTracker.reset();
-//                return "#";
-//            }
-//            next_input= inputs[r.nextInt(inputs.length)];
-//            System.out.println("RANDOM INPUT: " + next_input);
-//            return next_input;
-//        }else{
-//            next_input = inputs_to_fuzz.pop();
-//            if(next_input.equals("#")){
-//                PathTracker.reset();
-//                System.out.println("RESET");
-//            }else if(next_input.isEmpty()){
-//                next_input= inputs[r.nextInt(inputs.length)];
-//                System.out.println("RANDOM INPUT: " + next_input);
-//                return next_input;
-//            }
-//            System.out.println("NOT random input: " + next_input);
-//            return next_input;
-//        }
-//    }
-
     static void output(String out) {
 //        System.out.println(out);
     }
@@ -329,7 +285,7 @@ public class SymbolicExecutionLab {
             errorCodes.add(s);
             sbInformation.append((System.currentTimeMillis() - start));
             sbInformation.append(',');
-            sbInformation.append(s);
+            sbInformation.append(errorCodes.size());
             sbInformation.append('\n');
         }
     }
