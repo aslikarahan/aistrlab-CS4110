@@ -12,6 +12,9 @@ public class PatchingLab {
         }
 
         static boolean encounteredOperator(String operator, int left, int right, int operator_nr){
+
+
+
                 // do something useful
                 if(OperatorTracker.testing){
                         // these operators are executed in test OperatorTracker.current_test:
@@ -20,6 +23,7 @@ public class PatchingLab {
                 String replacememt = OperatorTracker.operators[operator_nr];
                 if(replacememt.equals("!=")) return left != right;
                 if(replacememt.equals("==")) return left == right;
+
                 if(replacememt.equals("<")) return left < right;
                 if(replacememt.equals(">")) return left > right;
                 if(replacememt.equals("<=")) return left <= right;
@@ -69,7 +73,7 @@ public class PatchingLab {
                 }
                 System.out.println();
                 OperatorTracker.startTesting();
-                return "R";
+                return "#";
         }
 
         static void output(String out){

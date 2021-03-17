@@ -18,6 +18,7 @@ public class PathTracker {
         z3model    = ctx.mkTrue();
         z3branches = ctx.mkTrue();
         inputs.clear();
+        System.gc();
     }
 
     /**
@@ -53,6 +54,7 @@ public class PathTracker {
             SymbolicExecutionLab.newSatisfiableInput(new_inputs);
         } else {
             //System.out.println("unsatisfiable");
+
         }
     }
 
@@ -84,6 +86,15 @@ public class PathTracker {
     // making a new input variable
     public static MyVar myInputVar(String value, String name){
         return SymbolicExecutionLab.createInput(name, ctx.mkString(value), ctx.getStringSort());
+    }
+
+    // for assigning an array to a variable.
+    public static MyVar[] myVar(MyVar[] value, String name){
+        MyVar[] vars = new MyVar[value.length];
+        for(int i = 0; i < value.length; i++){
+            vars[i] = value[i];
+        }
+        return vars;
     }
 
     // arrays are tricky, we deal with those
@@ -155,7 +166,7 @@ public class PathTracker {
         if(operator == "-=") new_value = ctx.mkSub((IntExpr)target.z3var,(IntExpr)value.z3var);
         if(operator == "+=") new_value = ctx.mkAdd((IntExpr)target.z3var,(IntExpr)value.z3var);
 
-        SymbolicExecutionLab.assign(target.z3var, target.name, value.z3var, target.z3var.getSort());
+        SymbolicExecutionLab.assign(target, target.name, new_value, target.z3var.getSort());
     }
 
     // we handle arrays, again using if-then-else and call standard variable assignment for all indices
@@ -166,7 +177,7 @@ public class PathTracker {
             if(operator == "-=") new_value = ctx.mkSub((IntExpr)old_expr,(IntExpr)value.z3var);
             if(operator == "+=") new_value = ctx.mkAdd((IntExpr)old_expr,(IntExpr)value.z3var);
 
-            SymbolicExecutionLab.assign(name[i].z3var, name[i].name, ctx.mkITE(ctx.mkEq(ctx.mkInt(i),index.z3var), new_value, old_expr), name[i].z3var.getSort());
+            SymbolicExecutionLab.assign(name[i], name[i].name, ctx.mkITE(ctx.mkEq(ctx.mkInt(i),index.z3var), new_value, old_expr), name[i].z3var.getSort());
         }
     }
 

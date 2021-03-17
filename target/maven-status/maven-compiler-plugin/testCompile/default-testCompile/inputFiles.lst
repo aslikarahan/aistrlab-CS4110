@@ -1,4 +1,5 @@
-/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/MainTest.java
-/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/fuzzing/DistanceVisitorTest.java
-/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/branch/BranchCoverageVisitorTest.java
-/home/str/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/line/LineCoverageVisitorTest.java
+/Users/schorlie/Desktop/AISTR/AISTR/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/line/LineCoverageVisitorTest.java
+/Users/schorlie/Desktop/AISTR/AISTR/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/symbolic/PathVisitorTest.java
+/Users/schorlie/Desktop/AISTR/AISTR/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/branch/BranchCoverageVisitorTest.java
+/Users/schorlie/Desktop/AISTR/AISTR/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/fuzzing/DistanceVisitorTest.java
+/Users/schorlie/Desktop/AISTR/AISTR/JavaInstrumentation/src/test/java/nl/tudelft/instrumentation/MainTest.java

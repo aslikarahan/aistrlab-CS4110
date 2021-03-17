@@ -1,4 +1,5 @@
 nl/tudelft/instrumentation/line/LineCoverageVisitorTest.class
+nl/tudelft/instrumentation/symbolic/PathVisitorTest.class
 nl/tudelft/instrumentation/fuzzing/DistanceVisitorTest.class
 nl/tudelft/instrumentation/MainTest.class
 nl/tudelft/instrumentation/branch/BranchCoverageVisitorTest.class
