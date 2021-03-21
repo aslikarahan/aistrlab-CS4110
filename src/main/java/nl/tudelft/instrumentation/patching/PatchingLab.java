@@ -9,15 +9,33 @@ public class PatchingLab {
         static ArrayList<Integer> passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
         static ArrayList<Integer> failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
         static ArrayList<Double> tarantulaScore = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0.0));
+        //1 is integer operator, 0 is boolean operator
+        static ArrayList<Integer> typeDistinguisher = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, -1));
+        static int populationSize = 4;
+        static ArrayList<String[]> population = new ArrayList<String[]>();
+        static ArrayList<ArrayList<Double>> mutatedTarantulaScores = new ArrayList<ArrayList<Double>>();
+        static ArrayList<Double> mutatedFitnessScores = new ArrayList<Double>();
 
+        static final String[] integerOperators = {"!=", "==", "<", ">", "<=", ">="};
+        static final String[] stringOperators = {"!=", "=="};
 
         static void initialize(){
                 // initialize the population based on OperatorTracker.operators
+                for (int i = 0; i < populationSize; i++) {
+                        String[] temp = OperatorTracker.operators.clone();
+                        population.add(i, temp);
+                        ArrayList<Double> temp_scores = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0.0));
+                        mutatedTarantulaScores.add(i, temp_scores);
+                        mutatedFitnessScores.add(i, 0.0);
+                }
+
+
         }
 
         // encounteredOperator gets called for each operator encountered while running tests
         static boolean encounteredOperator(String operator, int left, int right, int operator_nr){
                 // Do something useful
+                typeDistinguisher.set(operator_nr, 1);
                 if(operatorsPerTest.size() <= OperatorTracker.current_test){
                         HashSet<Integer> temp = new HashSet<>();
                         temp.add(operator_nr);
@@ -26,6 +44,7 @@ public class PatchingLab {
                         operatorsPerTest.get(OperatorTracker.current_test)
                                 .add(operator_nr);
                 }
+
                 String replacement = OperatorTracker.operators[operator_nr];
                 if(replacement.equals("!=")) return left != right;
                 if(replacement.equals("==")) return left == right;
@@ -38,6 +57,8 @@ public class PatchingLab {
 
         static boolean encounteredOperator(String operator, boolean left, boolean right, int operator_nr){
                 // Do something useful
+                typeDistinguisher.set(operator_nr, 0);
+
                 if(operatorsPerTest.size() <= OperatorTracker.current_test){
                         HashSet<Integer> temp = new HashSet<>();
                         temp.add(operator_nr);
@@ -54,7 +75,10 @@ public class PatchingLab {
         }
 
 
-        static void calculateTarantula(List<Boolean> testResults){
+        static ArrayList<Double> calculateTarantula(List<Boolean> testResults){
+
+                ArrayList<Double> tempScore = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0.0));
+
                 int nTests = OperatorTracker.tests.size();
                 int nTestsPassed = Collections.frequency(testResults, true);
                 int nTestsFailed = Collections.frequency(testResults, false);
@@ -74,53 +98,107 @@ public class PatchingLab {
                                 }
                         }
                 }
-                System.out.println("FAIL COUNTER: " +failCounter);
-                System.out.println("PASS COUNTER: " +passCounter);
-
+//                System.out.println("FAIL COUNTER: " +failCounter);
+//                System.out.println("PASS COUNTER: " +passCounter);
+                double result;
                 for(int j = 0; j < passCounter.size(); j++){
                         int failC = failCounter.get(j);
                         int passC = passCounter.get(j);
 
                         if(nTestsPassed == 0 || nTestsFailed == 0) {
-                                tarantulaScore.set(j, 0.0);
+                                result = 0.0;
                         }
                         else if(passC == 0 && failC == 0){
-                                tarantulaScore.set(j,0.0);
+                                result = 0.0;
                         }
                         else{
                                 double failComponent = (double) failC / nTestsFailed;
                                 double passComponent = (double) passC / nTestsPassed;
-                                double result = failComponent/(failComponent+passComponent);
-                                tarantulaScore.set(j, result);
+                                result = failComponent/(failComponent+passComponent);
                         }
+                        tempScore.set(j, result);
+
                 }
+                return tempScore;
+        }
+
+        static void createPopulation(String [] winner, ArrayList<Double> winnerTarantulaScore){
+
+                for (int j = 0; j < populationSize; j++) {
+                        String[] new_individual = winner.clone();
+
+                        for (int i = 0; i < winnerTarantulaScore.size(); i++) {
+                                Double value = winnerTarantulaScore.get(i);
+                                Integer operator_type = typeDistinguisher.get(i);
+                                if(value > 0.75){
+                                        if(operator_type == 0){
+                                                new_individual[i] = stringOperators[r.nextInt(stringOperators.length)];
+                                        }else{
+                                                new_individual[i] = integerOperators[r.nextInt(integerOperators.length)];
+
+                                        }
+                                }
+                        }
+
+                        population.set(j, new_individual);
+                }
+
         }
 
         static void run() {
                 initialize();
-                // Place the code here you want to run once:
-                // You want to change this of course, this is just an example
-                // Tests are loaded from resources/tests.txt, make sure you put in the right tests for the right problem!
+                // Place the code here you want to run :
                 List<Boolean> testResults = OperatorTracker.runAllTests();
-                System.out.println(operatorsPerTest);
+
                 int nTests = OperatorTracker.tests.size();
                 int nTestsPassed = Collections.frequency(testResults, true);
                 int nTestsFailed = Collections.frequency(testResults, false);
-                calculateTarantula(testResults);
-                System.out.println("Tarantula: " + tarantulaScore);
+                tarantulaScore = calculateTarantula(testResults);
+
+                createPopulation(OperatorTracker.operators, tarantulaScore);
+
+                operatorsPerTest = new ArrayList<>();
+                failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
+                passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
+
                 System.out.println("Initially, " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
-                System.out.println("Entered run");
+
+                //  OperatorTracker.operators  --> will be the candidate
+                // OperatorTracker.tarantulaScore --> tarantula score we base our things on
 
                 // Loop here, running your genetic algorithm until you think it is done
                 while (!isFinished) {
                       // Do things!
                         try {
+                                for (int i = 0; i < populationSize; i++){
+                                        OperatorTracker.operators = population.get(i).clone();
+                                        testResults = OperatorTracker.runAllTests();
+                                        nTests = OperatorTracker.tests.size();
+                                        nTestsPassed = Collections.frequency(testResults, true);
+                                        nTestsFailed = Collections.frequency(testResults, false);
+                                        ArrayList<Double> tarantula_of_individual = calculateTarantula(testResults);
+                                        mutatedTarantulaScores.set(i,tarantula_of_individual);
+                                        mutatedFitnessScores.set(i, (double)nTestsPassed/nTests);
+                                        passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
+                                        failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
+                                        operatorsPerTest = new ArrayList<>();
+                                        System.out.println("Individual "+ i+" " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
+
+                                }
+
+                                int winner = selectWinner();
+                                createPopulation(population.get(winner), mutatedTarantulaScores.get(winner));
                                 System.out.println("Woohoo, looping!");
+
                                 Thread.sleep(1000);
                         } catch (InterruptedException e) {
                                 e.printStackTrace();
                         }
                 }
+        }
+
+        private static int selectWinner() {
+                return 0;
         }
 
         public static void output(String out){

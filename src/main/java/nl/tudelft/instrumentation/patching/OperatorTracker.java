@@ -94,17 +94,17 @@ public class OperatorTracker {
      */
     public static void readTests(){
         try (Stream<String> stream = new BufferedReader(
-                new InputStreamReader(OperatorTracker.class.getResourceAsStream("/Problem1Testcases.txt"))).lines()
+                new InputStreamReader(OperatorTracker.class.getResourceAsStream("/Problem11Testcases.txt"))).lines()
         )
         {
             stream.forEach(s -> {
                 tests.add(s.split("->"));
             });
-            System.out.println("Read tests:");
-            for(String[] s : tests){
-                for(String st : s) System.out.print(st + " ");
-                System.out.println();
-            }
+//            System.out.println("Read tests:");
+//            for(String[] s : tests){
+//                for(String st : s) System.out.print(st + " ");
+//                System.out.println();
+//            }
         }
         catch (Exception e)
         {
