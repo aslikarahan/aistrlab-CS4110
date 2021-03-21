@@ -130,7 +130,7 @@ public class PatchingLab {
                         for (int i = 0; i < winnerTarantulaScore.size(); i++) {
                                 Double value = winnerTarantulaScore.get(i);
                                 Integer operator_type = typeDistinguisher.get(i);
-                                if(value > 0.75){
+                                if(value > 0.75 && r.nextInt(10)<5){
                                         if(operator_type == 0){
                                                 new_individual[i] = stringOperators[r.nextInt(stringOperators.length)];
                                         }else{
@@ -198,7 +198,9 @@ public class PatchingLab {
         }
 
         private static int selectWinner() {
-                return 0;
+                Double max = Collections.max(mutatedFitnessScores);
+                System.out.println("Winner score is " + max + " and the index is "+ mutatedFitnessScores.indexOf(max));
+                return mutatedFitnessScores.indexOf(max);
         }
 
         public static void output(String out){
