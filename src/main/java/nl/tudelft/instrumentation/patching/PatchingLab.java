@@ -11,11 +11,12 @@ public class PatchingLab {
         static ArrayList<Double> tarantulaScore = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0.0));
         //1 is integer operator, 0 is boolean operator
         static ArrayList<Integer> typeDistinguisher = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, -1));
-        static int populationSize = 16;
+        static int populationSize = 30;
         static ArrayList<String[]> population = new ArrayList<String[]>();
         static ArrayList<ArrayList<Double>> mutatedTarantulaScores = new ArrayList<ArrayList<Double>>();
         static ArrayList<Double> mutatedFitnessScores = new ArrayList<Double>();
         static double maxFitness = 0;
+        static String[] best_operators;
 
         static final String[] integerOperators = {"!=", "==", "<", ">", "<=", ">="};
         static final String[] stringOperators = {"!=", "=="};
@@ -30,8 +31,7 @@ public class PatchingLab {
                         mutatedTarantulaScores.add(i, temp_scores);
                         mutatedFitnessScores.add(i, 0.0);
                 }
-
-
+            best_operators = OperatorTracker.operators.clone();
         }
 
         // encounteredOperator gets called for each operator encountered while running tests
@@ -60,7 +60,6 @@ public class PatchingLab {
         static boolean encounteredOperator(String operator, boolean left, boolean right, int operator_nr){
                 // Do something useful
                 typeDistinguisher.set(operator_nr, 0);
-
                 if(operatorsPerTest.size() <= OperatorTracker.current_test){
                         HashSet<Integer> temp = new HashSet<>();
                         temp.add(operator_nr);
@@ -100,8 +99,6 @@ public class PatchingLab {
                                 }
                         }
                 }
-//                System.out.println("FAIL COUNTER: " +failCounter);
-//                System.out.println("PASS COUNTER: " +passCounter);
                 double result;
                 for(int j = 0; j < passCounter.size(); j++){
                         int failC = failCounter.get(j);
@@ -141,7 +138,7 @@ public class PatchingLab {
                                 }
                         }
                         for (int m = 0; m < new_individual.length; m++) {
-                                if (r.nextInt(100)<1){
+                                if (r.nextInt(100)<2){
                                         Integer operator_type_mutation = typeDistinguisher.get(m);
                                         if(operator_type_mutation == 0){
                                                 new_individual[m] = stringOperators[r.nextInt(stringOperators.length)];
@@ -163,8 +160,6 @@ public class PatchingLab {
                                 Double value_1 = tarantulaScore1.get(i);
                                 Double value_2 = tarantulaScore2.get(i);
                                 Integer operator_type = typeDistinguisher.get(i);
-
-//                                if((value_1 > 0.75 && r.nextInt(10)<mutationRate) || r.nextInt(1000)<3){
                                 if(value_1 > 0.8 && r.nextInt(10)>mutationRate){
                                         if(operator_type == 0){
                                                 p1[i] = stringOperators[r.nextInt(stringOperators.length)];
@@ -180,13 +175,15 @@ public class PatchingLab {
                                         }
                                 }
                         }
+
                         int crossover_index = r.nextInt(p1.length);
                         String[] new_individual = p1.clone();
                         for (int m = crossover_index; m < p1.length ; m++) {
                                 new_individual[m] = p2[m];
                         }
+
                         for (int m = 0; m < new_individual.length; m++) {
-                                if (r.nextInt(100)<1){
+                                if (r.nextInt(100)<2){
                                         Integer operator_type_mutation = typeDistinguisher.get(m);
                                         if(operator_type_mutation == 0){
                                                 new_individual[m] = stringOperators[r.nextInt(stringOperators.length)];
@@ -195,6 +192,7 @@ public class PatchingLab {
                                         }
                                 }
                         }
+
                         population.set(j, new_individual);
                 }
         }
@@ -217,9 +215,6 @@ public class PatchingLab {
 
                 System.out.println("Initially, " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
 
-                //  OperatorTracker.operators  --> will be the candidate
-                // OperatorTracker.tarantulaScore --> tarantula score we base our things on
-
                 // Loop here, running your genetic algorithm until you think it is done
                 while (!isFinished) {
                       // Do things!
@@ -237,19 +232,19 @@ public class PatchingLab {
                                         failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                                         operatorsPerTest = new ArrayList<>();
                                         System.out.println("Individual "+ i+" " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
-
                                 }
 
                                 int winner = selectWinner();
                                 int[] winners = selectWinners();
-//                                createPopulation(population.get(winner), mutatedTarantulaScores.get(winner));
+                                if(Collections.max(mutatedFitnessScores)>maxFitness) {
+                                    maxFitness = Collections.max(mutatedFitnessScores);
+                                    best_operators = population.get(winner).clone();
+                                    System.out.println("The current best operators are updated and as follows: ");
+                                    System.out.println(Arrays.toString(best_operators));
+                                }
                                 createPopulation(population.get(winners[0]), population.get(winners[1]), mutatedTarantulaScores.get(winners[0]), mutatedTarantulaScores.get(winners[1]),
                                         mutatedFitnessScores.get(winners[0]),  mutatedFitnessScores.get(winners[1]));
-//                                mutationRate = (int) (Collections.max(mutatedFitnessScores)*10);
-                                if(Collections.max(mutatedFitnessScores)>maxFitness)
-                                        maxFitness = Collections.max(mutatedFitnessScores);
                                 System.out.println("Woohoo, looping! The best is "+maxFitness);
-
                                 Thread.sleep(1000);
                         } catch (InterruptedException e) {
                                 e.printStackTrace();
@@ -259,7 +254,6 @@ public class PatchingLab {
 
         private static int selectWinner() {
                 Double max = Collections.max(mutatedFitnessScores);
-//                System.out.println("Old Winner score is " + max + " and the index is "+ mutatedFitnessScores.indexOf(max));
                 return mutatedFitnessScores.indexOf(max);
         }
 
@@ -269,7 +263,6 @@ public class PatchingLab {
                 Collections.shuffle(local_temp);
                 Double max_parent_1 = Collections.max(local_temp.subList(0, (int) local_temp.size()/2));
                 Double max_parent_2 = Collections.max(local_temp.subList((int) local_temp.size()/2, local_temp.size()));
-//                System.out.println("Winner score is " + max_parent_1 + " and " +max_parent_2+"the index is "+ mutatedFitnessScores.indexOf(max_parent_1) + " and "+ mutatedFitnessScores.indexOf(max_parent_2));
                 int[] parents = {mutatedFitnessScores.indexOf(max_parent_1), mutatedFitnessScores.indexOf(max_parent_2)};
                 return parents;
         }
