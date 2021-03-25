@@ -266,13 +266,12 @@ public class PatchingLab {
                                 if(Collections.max(mutatedFitnessScores)>maxFitness) {
                                     maxFitness = Collections.max(mutatedFitnessScores);
                                     best_operators = population.get(winner).clone();
-                                        sbGraph.append(System.currentTimeMillis()-start);
-                                        sbGraph.append(',');
-                                        sbGraph.append(maxFitness);
-                                        sbGraph.append('\n');
-
                                     System.out.println("Time: " + (System.currentTimeMillis()-start) + " - Fitness Score: " + maxFitness);
                                 }
+                                sbGraph.append(System.currentTimeMillis()-start);
+                                sbGraph.append(',');
+                                sbGraph.append(maxFitness);
+                                sbGraph.append('\n');
                                 createPopulation(population.get(winners[0]), population.get(winners[1]), mutatedTarantulaScores.get(winners[0]), mutatedTarantulaScores.get(winners[1]),
                                         mutatedFitnessScores.get(winners[0]),  mutatedFitnessScores.get(winners[1]));
                                 //System.out.println("Woohoo, looping! The best is "+maxFitness);
