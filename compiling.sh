@@ -1,10 +1,11 @@
 mvn clean package
-x=11
-while [ $x -le 16 ]
+
+problems=( 7 11 12 13 14 15 17)
+for i in "${problems[@]}"
 do
-  java -cp target/aistr.jar nl.tudelft.instrumentation.Main --type=distance --file=../RERS/Problem$x/Problem$x.java > Problem$x.java
-  javac -cp target/aistr.jar Problem$x.java
-  x=$(( $x + 1 ))
+  echo $i
+	java -cp target/aistr.jar nl.tudelft.instrumentation.Main --type=patch --file=../RERS/Problem$i/Problem$i.java > Problem$i.java
+  javac -cp target/aistr.jar:. Problem$i.java
+  java -cp target/aistr.jar:/Problem$i:. Problem$i
 done
 
-./script.sh

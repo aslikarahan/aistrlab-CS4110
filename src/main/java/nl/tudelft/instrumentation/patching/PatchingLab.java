@@ -1,5 +1,11 @@
 package nl.tudelft.instrumentation.patching;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Random;
 
 public class PatchingLab {
 
@@ -11,16 +17,22 @@ public class PatchingLab {
         static ArrayList<Double> tarantulaScore = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0.0));
         //1 is integer operator, 0 is boolean operator
         static ArrayList<Integer> typeDistinguisher = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, -1));
-        static int populationSize = 30;
+        static int populationSize = 32;
         static ArrayList<String[]> population = new ArrayList<String[]>();
         static ArrayList<ArrayList<Double>> mutatedTarantulaScores = new ArrayList<ArrayList<Double>>();
         static ArrayList<Double> mutatedFitnessScores = new ArrayList<Double>();
         static double maxFitness = 0;
-        static String[] best_operators;
+        static String[] best_operators; //best operators
 
         static final String[] integerOperators = {"!=", "==", "<", ">", "<=", ">="};
         static final String[] stringOperators = {"!=", "=="};
         private static int mutationRate = 5;
+
+        static long start = System.currentTimeMillis();
+        static long end = start + 60*1000*15; //stop after 15 minutes
+        static StringBuilder sbGraph = new StringBuilder();
+        static StringBuilder sbOperators = new StringBuilder();
+
 
         static void initialize(){
                 // initialize the population based on OperatorTracker.operators
@@ -77,7 +89,6 @@ public class PatchingLab {
 
 
         static ArrayList<Double> calculateTarantula(List<Boolean> testResults){
-
                 ArrayList<Double> tempScore = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0.0));
 
                 int nTests = OperatorTracker.tests.size();
@@ -199,6 +210,15 @@ public class PatchingLab {
 
         static void run() {
                 initialize();
+                sbGraph.append("Time");
+                sbGraph.append(',');
+                sbGraph.append("Fitnessscore");
+                sbGraph.append('\n');
+
+                sbOperators.append("Problem");
+                sbOperators.append(',');
+                sbOperators.append("Operators");
+                sbOperators.append('\n');
                 // Place the code here you want to run :
                 List<Boolean> testResults = OperatorTracker.runAllTests();
 
@@ -213,10 +233,17 @@ public class PatchingLab {
                 failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                 passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
 
-                System.out.println("Initially, " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
+                //System.out.println("Initially, " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
+                //System.out.println("Start");
+                System.out.println("Time: " + (System.currentTimeMillis()-start) + " - Fitness Score: " + ((double)nTestsPassed/nTests));
+                maxFitness = (double)nTestsPassed/nTests;
+                sbGraph.append(System.currentTimeMillis()-start);
+                sbGraph.append(',');
+                sbGraph.append(maxFitness);
+                sbGraph.append('\n');
 
                 // Loop here, running your genetic algorithm until you think it is done
-                while (!isFinished) {
+                while (maxFitness != 1 && System.currentTimeMillis() < end) {
                       // Do things!
                         try {
                                 for (int i = 0; i < populationSize; i++){
@@ -231,7 +258,7 @@ public class PatchingLab {
                                         passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                                         failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                                         operatorsPerTest = new ArrayList<>();
-                                        System.out.println("Individual "+ i+" " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
+                                        //System.out.println("Individual "+ i+" " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
                                 }
 
                                 int winner = selectWinner();
@@ -239,17 +266,44 @@ public class PatchingLab {
                                 if(Collections.max(mutatedFitnessScores)>maxFitness) {
                                     maxFitness = Collections.max(mutatedFitnessScores);
                                     best_operators = population.get(winner).clone();
-                                    System.out.println("The current best operators are updated and as follows: ");
-                                    System.out.println(Arrays.toString(best_operators));
+                                        sbGraph.append(System.currentTimeMillis()-start);
+                                        sbGraph.append(',');
+                                        sbGraph.append(maxFitness);
+                                        sbGraph.append('\n');
+
+                                    System.out.println("Time: " + (System.currentTimeMillis()-start) + " - Fitness Score: " + maxFitness);
                                 }
                                 createPopulation(population.get(winners[0]), population.get(winners[1]), mutatedTarantulaScores.get(winners[0]), mutatedTarantulaScores.get(winners[1]),
                                         mutatedFitnessScores.get(winners[0]),  mutatedFitnessScores.get(winners[1]));
-                                System.out.println("Woohoo, looping! The best is "+maxFitness);
+                                //System.out.println("Woohoo, looping! The best is "+maxFitness);
                                 Thread.sleep(1000);
                         } catch (InterruptedException e) {
                                 e.printStackTrace();
                         }
                 }
+                sbOperators.append(System.currentTimeMillis()-start);
+                sbOperators.append(',');
+                sbOperators.append(Arrays.toString(best_operators));
+                sbOperators.append('\n');
+
+                PrintWriter graph = null;
+                PrintWriter operator_file = null;
+                LocalDateTime now = LocalDateTime.now();
+                String hour = String.valueOf(now.getHour());
+                String minute = String.valueOf(now.getMinute());
+                try {
+                        graph = new PrintWriter(new File("CSV_Patching/graph"+hour+minute+".csv"));
+                        operator_file = new PrintWriter(new File("CSV_Patching/operators"+hour+minute+".csv"));
+                } catch (FileNotFoundException ex) {
+                        ex.printStackTrace();
+                }
+                graph.write(sbGraph.toString());
+                graph.flush();
+                graph.close();
+                operator_file.write(sbOperators.toString());
+                operator_file.flush();
+                operator_file.close();
+                System.exit(0);
         }
 
         private static int selectWinner() {
