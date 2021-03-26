@@ -23,13 +23,13 @@ public class PatchingLab {
         static ArrayList<Double> mutatedFitnessScores = new ArrayList<Double>();
         static double maxFitness = 0;
         static String[] best_operators; //best operators
-
+        static ArrayList<Double> best_tarantula_scores;
         static final String[] integerOperators = {"!=", "==", "<", ">", "<=", ">="};
         static final String[] stringOperators = {"!=", "=="};
         private static int mutationRate = 5;
 
         static long start = System.currentTimeMillis();
-        static long end = start + 60*1000*15; //stop after 15 minutes
+        static long end = start + 60*1000*120; //stop after 60 minutes
         static StringBuilder sbGraph = new StringBuilder();
         static StringBuilder sbOperators = new StringBuilder();
 
@@ -133,7 +133,6 @@ public class PatchingLab {
         }
 
         static void createPopulation(String [] winner, ArrayList<Double> winnerTarantulaScore){
-
                 for (int j = 0; j < populationSize; j++) {
                         String[] new_individual = winner.clone();
 
@@ -160,7 +159,37 @@ public class PatchingLab {
                         }
                         population.set(j, new_individual);
                 }
+                }
 
+        static ArrayList<String[]> createPopulationFromBestPerformer(String [] best_performer, ArrayList<Double> best_performer_tarantula){
+                ArrayList<String[]> best_performer_children = new ArrayList<String[]>();
+                for (int j = 0; j < populationSize/8; j++) {
+                        String[] new_individual = best_performer.clone();
+                        for (int i = 0; i < best_performer_tarantula.size(); i++) {
+                                Double value = best_performer_tarantula.get(i);
+                                Integer operator_type = typeDistinguisher.get(i);
+                                if(value > 0.75 && r.nextInt(10)<5){
+                                        if(operator_type == 0){
+                                                new_individual[i] = stringOperators[r.nextInt(stringOperators.length)];
+                                        }else{
+                                                new_individual[i] = integerOperators[r.nextInt(integerOperators.length)];
+                                        }
+                                }
+                        }
+                        for (int m = 0; m < new_individual.length; m++) {
+                                if (r.nextInt(100)<2){
+                                        Integer operator_type_mutation = typeDistinguisher.get(m);
+                                        if(operator_type_mutation == 0){
+                                                new_individual[m] = stringOperators[r.nextInt(stringOperators.length)];
+                                        }else{
+                                                new_individual[m] = integerOperators[r.nextInt(integerOperators.length)];
+                                        }
+                                }
+                        }
+                        best_performer_children.add(j, new_individual);
+                }
+                best_performer_children.add(best_performer_children.size()-1, best_performer);
+                return best_performer_children;
         }
         private static void createPopulation(String[] parent1, String[] parent2, ArrayList<Double> tarantulaScore1, ArrayList<Double> tarantulaScore2, double fitness1, double fitness2) {
 
@@ -206,6 +235,10 @@ public class PatchingLab {
 
                         population.set(j, new_individual);
                 }
+                ArrayList<String[]> populationFromBestPerformer = createPopulationFromBestPerformer(best_operators, best_tarantula_scores);
+                for (int j = 0; j < populationSize/8; j++) {
+                        population.set(8*j,populationFromBestPerformer.get(j));
+                }
         }
 
         static void run() {
@@ -232,11 +265,11 @@ public class PatchingLab {
                 operatorsPerTest = new ArrayList<>();
                 failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                 passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
-
                 //System.out.println("Initially, " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
                 //System.out.println("Start");
                 System.out.println("Time: " + (System.currentTimeMillis()-start) + " - Fitness Score: " + ((double)nTestsPassed/nTests));
                 maxFitness = (double)nTestsPassed/nTests;
+                best_tarantula_scores = new ArrayList<Double>(tarantulaScore);
                 sbGraph.append(System.currentTimeMillis()-start);
                 sbGraph.append(',');
                 sbGraph.append(maxFitness);
@@ -258,7 +291,7 @@ public class PatchingLab {
                                         passCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                                         failCounter = new ArrayList<>(Collections.nCopies(OperatorTracker.operators.length, 0));
                                         operatorsPerTest = new ArrayList<>();
-                                        //System.out.println("Individual "+ i+" " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
+//                                        System.out.println("Individual "+ i+" " + nTestsPassed + "/" + nTests + " passed. Fitness: " + (double)nTestsPassed/nTests);
                                 }
 
                                 int winner = selectWinner();
@@ -266,6 +299,7 @@ public class PatchingLab {
                                 if(Collections.max(mutatedFitnessScores)>maxFitness) {
                                     maxFitness = Collections.max(mutatedFitnessScores);
                                     best_operators = population.get(winner).clone();
+                                    best_tarantula_scores = new ArrayList<Double>(mutatedTarantulaScores.get(winner));
                                     System.out.println("Time: " + (System.currentTimeMillis()-start) + " - Fitness Score: " + maxFitness);
                                 }
                                 sbGraph.append(System.currentTimeMillis()-start);
@@ -315,7 +349,8 @@ public class PatchingLab {
                 local_temp.addAll(mutatedFitnessScores);
                 Collections.shuffle(local_temp);
                 Double max_parent_1 = Collections.max(local_temp.subList(0, (int) local_temp.size()/2));
-                Double max_parent_2 = Collections.max(local_temp.subList((int) local_temp.size()/2, local_temp.size()));
+                Collections.shuffle(local_temp);
+                Double max_parent_2 = Collections.max(local_temp.subList(0, (int) local_temp.size()/2));
                 int[] parents = {mutatedFitnessScores.indexOf(max_parent_1), mutatedFitnessScores.indexOf(max_parent_2)};
                 return parents;
         }
